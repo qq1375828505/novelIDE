@@ -6,12 +6,14 @@ import 'package:novel_ide/core/router.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/config_service.dart';
 import 'package:novel_ide/data/services/connectivity_service.dart';
+import 'package:novel_ide/data/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await ConfigService.init();
   ConnectivityService.startMonitoring();
+  await NotificationService.init();
 
   runApp(
     const ProviderScope(

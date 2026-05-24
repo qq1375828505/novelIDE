@@ -6,6 +6,7 @@ import 'package:novel_ide/data/models/volume_model.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
+import 'package:novel_ide/data/repositories/novel_repository.dart';
 
 class OutlinePage extends ConsumerWidget {
   const OutlinePage({super.key});
@@ -54,31 +55,39 @@ class OutlinePage extends ConsumerWidget {
           }
           return chaptersAsync.when(
             data: (chapters) {
-              return ReorderableListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: volumes.length,
-                onReorder: (oldIndex, newIndex) async {
-                  if (oldIndex < newIndex) newIndex--;
-                  final vols = List<Volume>.from(volumes);
-                  final moved = vols.removeAt(oldIndex);
-                  vols.insert(newIndex, moved);
-                  for (int i = 0; i < vols.length; i++) {
-                    final updated = vols[i].copyWith(orderIndex: i);
-                    await ref.read(volumeRepoProvider).updateVolume(updated);
-                  }
-                  ref.invalidate(volumesProvider(selectedNovel.id));
-                },
-                itemBuilder: (context, index) {
-                  final volume = volumes[index];
-                  final volumeChapters = chapters.where((c) => c.volumeId == volume.id).toList();
-                  return _VolumeOutlineCard(
-                    key: ValueKey(volume.id),
-                    volume: volume,
-                    volumeIndex: index,
-                    chapters: volumeChapters,
-                    novel: selectedNovel,
-                  );
-                },
+              return Column(
+                children: [
+                  _MainOutlineSection(novel: selectedNovel),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ReorderableListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: volumes.length,
+                      onReorder: (oldIndex, newIndex) async {
+                        if (oldIndex < newIndex) newIndex--;
+                        final vols = List<Volume>.from(volumes);
+                        final moved = vols.removeAt(oldIndex);
+                        vols.insert(newIndex, moved);
+                        for (int i = 0; i < vols.length; i++) {
+                          final updated = vols[i].copyWith(orderIndex: i);
+                          await ref.read(volumeRepoProvider).updateVolume(updated);
+                        }
+                        ref.invalidate(volumesProvider(selectedNovel.id));
+                      },
+                      itemBuilder: (context, index) {
+                        final volume = volumes[index];
+                        final volumeChapters = chapters.where((c) => c.volumeId == volume.id).toList();
+                        return _VolumeOutlineCard(
+                          key: ValueKey(volume.id),
+                          volume: volume,
+                          volumeIndex: index,
+                          chapters: volumeChapters,
+                          novel: selectedNovel,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -342,6 +351,93 @@ class _VolumeOutlineCard extends ConsumerWidget {
             },
             child: const Text('创建并编辑'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- V2: Main Outline Section ---
+class _MainOutlineSection extends ConsumerStatefulWidget {
+  final Novel novel;
+  const _MainOutlineSection({required this.novel});
+
+  @override
+  ConsumerState<_MainOutlineSection> createState() => _MainOutlineSectionState();
+}
+
+class _MainOutlineSectionState extends ConsumerState<_MainOutlineSection> {
+  late TextEditingController _ctrl;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.novel.description ?? '');
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.summarize, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              const Text('主线大纲', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              IconButton(
+                icon: Icon(_isEditing ? Icons.check : Icons.edit, size: 18),
+                onPressed: () async {
+                  if (_isEditing) {
+                    final updated = widget.novel.copyWith(description: _ctrl.text.trim());
+                    await NovelRepository().updateNovel(updated);
+                    ref.invalidate(novelsProvider);
+                    ref.read(selectedNovelProvider.notifier).state = updated;
+                  }
+                  setState(() => _isEditing = !_isEditing);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_isEditing)
+            TextField(
+              controller: _ctrl,
+              maxLines: 5,
+              minLines: 3,
+              decoration: InputDecoration(
+                hintText: '输入主线大纲：故事的核心冲突、主角目标、主要转折点...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.all(12),
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _ctrl.text.isEmpty ? '点击编辑图标添加主线大纲' : _ctrl.text,
+                style: TextStyle(
+                  color: _ctrl.text.isEmpty ? Colors.grey[400] : null,
+                  fontSize: 14,
+                  height: 1.6,
+                ),
+              ),
+            ),
         ],
       ),
     );

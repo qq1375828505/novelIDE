@@ -19,7 +19,7 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
   }
 
   @override
@@ -57,9 +57,13 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
         title: Text('${selectedNovel.title} · 资料'),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           tabs: const [
             Tab(text: '角色'),
             Tab(text: '设定'),
+            Tab(text: '地点'),
+            Tab(text: '势力'),
+            Tab(text: '道具'),
             Tab(text: '伏笔'),
             Tab(text: '参考'),
           ],
@@ -70,6 +74,9 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
         children: [
           _CharacterTab(novelId: selectedNovel.id),
           _SettingTab(novelId: selectedNovel.id),
+          _LocationTab(novelId: selectedNovel.id),
+          _FactionTab(novelId: selectedNovel.id),
+          _ItemTab(novelId: selectedNovel.id),
           _HookTab(novelId: selectedNovel.id),
           _ReferenceTab(novelId: selectedNovel.id),
         ],
@@ -84,18 +91,13 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
   void _showAddDialog(String novelId) {
     final index = _tabController.index;
     switch (index) {
-      case 0:
-        _showCharacterDialog(novelId);
-        break;
-      case 1:
-        _showSettingDialog(novelId);
-        break;
-      case 2:
-        _showHookDialog(novelId);
-        break;
-      case 3:
-        _showReferenceDialog(novelId);
-        break;
+      case 0: _showCharacterDialog(novelId); break;
+      case 1: _showSettingDialog(novelId); break;
+      case 2: _showLocationDialog(novelId); break;
+      case 3: _showFactionDialog(novelId); break;
+      case 4: _showItemDialog(novelId); break;
+      case 5: _showHookDialog(novelId); break;
+      case 6: _showReferenceDialog(novelId); break;
     }
   }
 
@@ -176,6 +178,135 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
               );
               final list = ref.read(settingCardsProvider(novelId));
               ref.read(settingCardsProvider(novelId).notifier).state = [...list, card];
+              Navigator.pop(ctx);
+            },
+            child: const Text('添加'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLocationDialog(String novelId) {
+    final nameCtrl = TextEditingController();
+    final catCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('添加地点'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '地点名称', hintText: '例如：青云宗')),
+              const SizedBox(height: 12),
+              TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类', hintText: '例如：宗门/城市/秘境')),
+              const SizedBox(height: 12),
+              TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述'), maxLines: 3),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isEmpty) return;
+              final loc = Location(
+                id: const Uuid().v4(), novelId: novelId,
+                name: nameCtrl.text.trim(),
+                category: catCtrl.text.trim().isEmpty ? null : catCtrl.text.trim(),
+                description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+              );
+              final list = ref.read(locationsProvider(novelId));
+              ref.read(locationsProvider(novelId).notifier).state = [...list, loc];
+              MaterialRepository().saveLocations(novelId, [...list, loc]);
+              Navigator.pop(ctx);
+            },
+            child: const Text('添加'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFactionDialog(String novelId) {
+    final nameCtrl = TextEditingController();
+    final catCtrl = TextEditingController();
+    final leaderCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('添加势力'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '势力名称', hintText: '例如：天剑宗')),
+              const SizedBox(height: 12),
+              TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类', hintText: '例如：正道/魔道/中立')),
+              const SizedBox(height: 12),
+              TextField(controller: leaderCtrl, decoration: const InputDecoration(labelText: '首领', hintText: '可选')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isEmpty) return;
+              final faction = Faction(
+                id: const Uuid().v4(), novelId: novelId,
+                name: nameCtrl.text.trim(),
+                category: catCtrl.text.trim().isEmpty ? null : catCtrl.text.trim(),
+                leader: leaderCtrl.text.trim().isEmpty ? null : leaderCtrl.text.trim(),
+              );
+              final list = ref.read(factionsProvider(novelId));
+              ref.read(factionsProvider(novelId).notifier).state = [...list, faction];
+              MaterialRepository().saveFactions(novelId, [...list, faction]);
+              Navigator.pop(ctx);
+            },
+            child: const Text('添加'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showItemDialog(String novelId) {
+    final nameCtrl = TextEditingController();
+    final catCtrl = TextEditingController();
+    final powerCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('添加道具'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '道具名称', hintText: '例如：诛仙剑')),
+              const SizedBox(height: 12),
+              TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类', hintText: '例如：武器/法宝/丹药')),
+              const SizedBox(height: 12),
+              TextField(controller: powerCtrl, decoration: const InputDecoration(labelText: '品阶/等级', hintText: '可选')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isEmpty) return;
+              final item = Item(
+                id: const Uuid().v4(), novelId: novelId,
+                name: nameCtrl.text.trim(),
+                category: catCtrl.text.trim().isEmpty ? null : catCtrl.text.trim(),
+                powerLevel: powerCtrl.text.trim().isEmpty ? null : powerCtrl.text.trim(),
+              );
+              final list = ref.read(itemsProvider(novelId));
+              ref.read(itemsProvider(novelId).notifier).state = [...list, item];
+              MaterialRepository().saveItems(novelId, [...list, item]);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
@@ -521,4 +652,128 @@ Widget _emptyState(String title, String desc, IconData icon) {
       ],
     ),
   );
+}
+
+// --- V2: Location Tab ---
+class _LocationTab extends ConsumerWidget {
+  final String novelId;
+  const _LocationTab({required this.novelId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locations = ref.watch(locationsProvider(novelId));
+    if (locations.isEmpty) {
+      return _emptyState('地点', '记录故事发生的重要地点', Icons.location_on);
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: locations.length,
+      itemBuilder: (context, index) {
+        final loc = locations[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.green.withOpacity(0.1),
+              child: const Icon(Icons.location_on, color: Colors.green, size: 20),
+            ),
+            title: Text(loc.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(loc.category ?? loc.description ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () async {
+                final updated = List<Location>.from(locations)..removeAt(index);
+                ref.read(locationsProvider(novelId).notifier).state = updated;
+                await MaterialRepository().saveLocations(novelId, updated);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// --- V2: Faction Tab ---
+class _FactionTab extends ConsumerWidget {
+  final String novelId;
+  const _FactionTab({required this.novelId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final factions = ref.watch(factionsProvider(novelId));
+    if (factions.isEmpty) {
+      return _emptyState('势力', '记录故事中的门派、国家、组织', Icons.account_balance);
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: factions.length,
+      itemBuilder: (context, index) {
+        final f = factions[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.purple.withOpacity(0.1),
+              child: const Icon(Icons.account_balance, color: Colors.purple, size: 20),
+            ),
+            title: Text(f.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('${f.category ?? ''} ${f.leader != null ? '· ${f.leader}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () async {
+                final updated = List<Faction>.from(factions)..removeAt(index);
+                ref.read(factionsProvider(novelId).notifier).state = updated;
+                await MaterialRepository().saveFactions(novelId, updated);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// --- V2: Item Tab ---
+class _ItemTab extends ConsumerWidget {
+  final String novelId;
+  const _ItemTab({required this.novelId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(itemsProvider(novelId));
+    if (items.isEmpty) {
+      return _emptyState('道具', '记录武器、法宝、丹药等重要道具', Icons.inventory_2);
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: item.isKeyItem ? Colors.amber.withOpacity(0.2) : Colors.blue.withOpacity(0.1),
+              child: Icon(
+                item.isKeyItem ? Icons.star : Icons.inventory_2,
+                color: item.isKeyItem ? Colors.amber : Colors.blue,
+                size: 20,
+              ),
+            ),
+            title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('${item.category ?? ''} ${item.powerLevel != null ? '· ${item.powerLevel}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () async {
+                final updated = List<Item>.from(items)..removeAt(index);
+                ref.read(itemsProvider(novelId).notifier).state = updated;
+                await MaterialRepository().saveItems(novelId, updated);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
