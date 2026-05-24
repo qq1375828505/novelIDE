@@ -113,6 +113,10 @@ final settingCardsProvider = StateProvider.family<List<SettingCard>, String>((re
 final plotHooksProvider = StateProvider.family<List<PlotHook>, String>((ref, novelId) => []);
 final referencesProvider = StateProvider.family<List<ReferenceMaterial>, String>((ref, novelId) => []);
 final settingRemindersProvider = StateProvider.family<List<SettingReminder>, String>((ref, novelId) => []);
+// V2: Locations, Factions, Items
+final locationsProvider = StateProvider.family<List<Location>, String>((ref, novelId) => []);
+final factionsProvider = StateProvider.family<List<Faction>, String>((ref, novelId) => []);
+final itemsProvider = StateProvider.family<List<Item>, String>((ref, novelId) => []);
 
 // AI Config
 final aiConfigsProvider = StateProvider<List<AiConfig>>((ref) => []);
@@ -169,6 +173,10 @@ Future<void> loadNovelMaterials(WidgetRef ref, String novelId) async {
   ref.read(plotHooksProvider(novelId).notifier).state = await repo.getPlotHooks(novelId);
   ref.read(referencesProvider(novelId).notifier).state = await repo.getReferences(novelId);
   ref.read(settingRemindersProvider(novelId).notifier).state = await repo.getSettingReminders(novelId);
+  // V2
+  ref.read(locationsProvider(novelId).notifier).state = await repo.getLocations(novelId);
+  ref.read(factionsProvider(novelId).notifier).state = await repo.getFactions(novelId);
+  ref.read(itemsProvider(novelId).notifier).state = await repo.getItems(novelId);
 }
 
 /// Load all data on app startup

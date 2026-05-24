@@ -7,6 +7,7 @@ import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/data/models/novel_model.dart';
 import 'package:novel_ide/data/models/tomato_preset_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
+import 'package:novel_ide/data/services/notification_service.dart';
 import 'package:novel_ide/presentation/pages/ai/ai_drawer.dart';
 import 'package:novel_ide/presentation/pages/ai/search_drawer.dart';
 import 'package:novel_ide/presentation/pages/ai/setting_reminder_page.dart';
@@ -91,6 +92,11 @@ class _EditorPageState extends ConsumerState<EditorPage> {
       // Refresh today's count
       final todayWords = await ref.read(statsRepoProvider).getTodayWords();
       ref.read(todayWordsProvider.notifier).state = todayWords;
+      // Check if daily goal reached
+      final goal = ref.read(wordGoalProvider);
+      if (todayWords >= goal && todayWords - delta < goal) {
+        NotificationService.showGoalReached(todayWords, goal);
+      }
     }
 
     ref.read(saveStatusProvider.notifier).state = '已保存 ${DateFormat('HH:mm').format(DateTime.now())}';

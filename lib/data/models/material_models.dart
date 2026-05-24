@@ -268,3 +268,154 @@ class SettingReminder {
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }
+
+// --- V2: Location, Faction, Item models ---
+
+class Location {
+  final String id;
+  final String novelId;
+  String name;
+  String? category; // 城市/宗门/秘境/国家等
+  String? description;
+  String? features; // 地理特征、资源
+  String? rules; // 特殊规则、限制
+  List<SettingTag> tags;
+  DateTime createdAt;
+  DateTime updatedAt;
+
+  Location({
+    required this.id,
+    required this.novelId,
+    required this.name,
+    this.category,
+    this.description,
+    this.features,
+    this.rules,
+    List<SettingTag>? tags,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : tags = tags ?? [],
+        createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'id': id, 'novelId': novelId, 'name': name,
+        'category': category, 'description': description,
+        'features': features, 'rules': rules,
+        'tags': tags.map((t) => t.toJson()).toList(),
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
+
+  factory Location.fromJson(Map<String, dynamic> json) => Location(
+        id: json['id'] as String, novelId: json['novelId'] as String,
+        name: json['name'] as String, category: json['category'] as String?,
+        description: json['description'] as String?,
+        features: json['features'] as String?, rules: json['rules'] as String?,
+        tags: (json['tags'] as List<dynamic>?)?.map((t) => SettingTag.fromJson(t as Map<String, dynamic>)).toList() ?? [],
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+      );
+}
+
+class Faction {
+  final String id;
+  final String novelId;
+  String name;
+  String? category; // 正道/魔道/中立/国家势力等
+  String? description;
+  String? leader;
+  String? strength; // 势力等级/战力
+  List<String> members; // 关联角色名
+  List<SettingTag> tags;
+  DateTime createdAt;
+  DateTime updatedAt;
+
+  Faction({
+    required this.id,
+    required this.novelId,
+    required this.name,
+    this.category,
+    this.description,
+    this.leader,
+    this.strength,
+    List<String>? members,
+    List<SettingTag>? tags,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : members = members ?? [],
+        tags = tags ?? [],
+        createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'id': id, 'novelId': novelId, 'name': name,
+        'category': category, 'description': description,
+        'leader': leader, 'strength': strength,
+        'members': members, 'tags': tags.map((t) => t.toJson()).toList(),
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
+
+  factory Faction.fromJson(Map<String, dynamic> json) => Faction(
+        id: json['id'] as String, novelId: json['novelId'] as String,
+        name: json['name'] as String, category: json['category'] as String?,
+        description: json['description'] as String?,
+        leader: json['leader'] as String?, strength: json['strength'] as String?,
+        members: (json['members'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+        tags: (json['tags'] as List<dynamic>?)?.map((t) => SettingTag.fromJson(t as Map<String, dynamic>)).toList() ?? [],
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+      );
+}
+
+class Item {
+  final String id;
+  final String novelId;
+  String name;
+  String? category; // 武器/法宝/丹药/道具等
+  String? description;
+  String? powerLevel; // 品阶/等级
+  String? owner; // 持有者
+  bool isKeyItem; // 是否关键道具
+  List<SettingTag> tags;
+  DateTime createdAt;
+  DateTime updatedAt;
+
+  Item({
+    required this.id,
+    required this.novelId,
+    required this.name,
+    this.category,
+    this.description,
+    this.powerLevel,
+    this.owner,
+    this.isKeyItem = false,
+    List<SettingTag>? tags,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : tags = tags ?? [],
+        createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'id': id, 'novelId': novelId, 'name': name,
+        'category': category, 'description': description,
+        'powerLevel': powerLevel, 'owner': owner,
+        'isKeyItem': isKeyItem,
+        'tags': tags.map((t) => t.toJson()).toList(),
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
+
+  factory Item.fromJson(Map<String, dynamic> json) => Item(
+        id: json['id'] as String, novelId: json['novelId'] as String,
+        name: json['name'] as String, category: json['category'] as String?,
+        description: json['description'] as String?,
+        powerLevel: json['powerLevel'] as String?, owner: json['owner'] as String?,
+        isKeyItem: json['isKeyItem'] as bool? ?? false,
+        tags: (json['tags'] as List<dynamic>?)?.map((t) => SettingTag.fromJson(t as Map<String, dynamic>)).toList() ?? [],
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+      );
+}

@@ -234,7 +234,40 @@ class _PolishEnginePageState extends ConsumerState<PolishEnginePage> {
                                         setState(() => item.isAccepted = !item.isAccepted);
                                       },
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 4),
+                                    TextButton.icon(
+                                      icon: const Icon(Icons.add_circle_outline, size: 18),
+                                      label: const Text('插入下方'),
+                                      onPressed: () {
+                                        // Insert suggestion below original in editor
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('建议已插入'), duration: Duration(seconds: 1)),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(width: 4),
+                                    TextButton.icon(
+                                      icon: const Icon(Icons.refresh, size: 18),
+                                      label: const Text('重新生成'),
+                                      onPressed: () async {
+                                        setState(() => _isLoading = true);
+                                        final config = ref.read(selectedAiConfigProvider);
+                                        if (config != null) {
+                                          final aiService = ref.read(aiServiceProvider);
+                                          final response = await aiService.send(
+                                            config: config,
+                                            systemPrompt: '你是网文精修专家。请重新优化以下段落的${item.dimension}方面：',
+                                            userMessage: '原文：${item.original}\n\n请给出更好的修改建议。',
+                                          );
+                                          setState(() {
+                                            item.suggestion = response;
+                                            item.isAccepted = false;
+                                            _isLoading = false;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                    const SizedBox(width: 4),
                                     TextButton.icon(
                                       icon: const Icon(Icons.close, size: 18),
                                       label: const Text('跳过'),

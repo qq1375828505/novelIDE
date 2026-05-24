@@ -94,4 +94,52 @@ class MaterialRepository {
     final file = File(p.join(dir.path, '${novelId}_reminders.json'));
     await file.writeAsString(jsonEncode(reminders.map((r) => r.toJson()).toList()));
   }
+
+  // --- V2: Locations ---
+  Future<List<Location>> getLocations(String novelId) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_locations.json'));
+    if (!await file.exists()) return [];
+    final content = await file.readAsString();
+    final list = jsonDecode(content) as List<dynamic>;
+    return list.map((e) => Location.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveLocations(String novelId, List<Location> locations) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_locations.json'));
+    await file.writeAsString(jsonEncode(locations.map((l) => l.toJson()).toList()));
+  }
+
+  // --- V2: Factions ---
+  Future<List<Faction>> getFactions(String novelId) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_factions.json'));
+    if (!await file.exists()) return [];
+    final content = await file.readAsString();
+    final list = jsonDecode(content) as List<dynamic>;
+    return list.map((e) => Faction.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveFactions(String novelId, List<Faction> factions) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_factions.json'));
+    await file.writeAsString(jsonEncode(factions.map((f) => f.toJson()).toList()));
+  }
+
+  // --- V2: Items ---
+  Future<List<Item>> getItems(String novelId) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_items.json'));
+    if (!await file.exists()) return [];
+    final content = await file.readAsString();
+    final list = jsonDecode(content) as List<dynamic>;
+    return list.map((e) => Item.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveItems(String novelId, List<Item> items) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_items.json'));
+    await file.writeAsString(jsonEncode(items.map((i) => i.toJson()).toList()));
+  }
 }

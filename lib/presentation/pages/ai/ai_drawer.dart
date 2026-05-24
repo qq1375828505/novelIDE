@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
+import 'package:novel_ide/presentation/pages/tomato/shuangdian_report_page.dart';
+import 'package:novel_ide/presentation/pages/tomato/water_report_page.dart';
+import 'package:novel_ide/presentation/pages/tomato/title_generator_result_page.dart';
 
 class AiDrawer extends ConsumerStatefulWidget {
   final String novelId;
@@ -82,6 +85,79 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
     widget.onClose();
   }
 
+  // --- V2: Report-generating quick actions ---
+
+  Future<void> _runShuangdianCheck() async {
+    final config = ref.read(selectedAiConfigProvider);
+    if (config == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先配置AI模型')));
+      return;
+    }
+    final content = widget.controller.text;
+    if (content.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先输入章节内容')));
+      return;
+    }
+    widget.onClose();
+    final aiService = ref.read(aiServiceProvider);
+    final response = await aiService.send(
+      config: config,
+      systemPrompt: '你是番茄小说爽点密度检查器。分析规则：\n1. 爽点分类：身份揭露、打脸、实力碾压、财富展示、情感反转、系统奖励\n2. 密度标准：每3000字至少2-3个爽点\n3. 评分标准：0-10分\n4. 输出格式：评分数+爽点列表(位置/类型/强度)+优化建议',
+      userMessage: '请分析以下章节的爽点密度：\n\n$content',
+    );
+    if (mounted) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ShuangdianReportPage(chapterContent: content, aiResponse: response),
+      ));
+    }
+  }
+
+  Future<void> _runWaterCheck() async {
+    final config = ref.read(selectedAiConfigProvider);
+    if (config == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先配置AI模型')));
+      return;
+    }
+    final content = widget.controller.text;
+    if (content.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先输入章节内容')));
+      return;
+    }
+    widget.onClose();
+    final aiService = ref.read(aiServiceProvider);
+    final response = await aiService.send(
+      config: config,
+      systemPrompt: '你是番茄小说水文检测器。检测规则：\n1. 水文分类：废话对话、冗余环境描写、无推进日常、重复说明\n2. 水文率：<15%优秀，15-25%及格，>25%需精简\n3. 输出格式：水文率+水文段落列表+优化方案',
+      userMessage: '请检测以下章节的水文：\n\n$content',
+    );
+    if (mounted) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => WaterReportPage(chapterContent: content, aiResponse: response),
+      ));
+    }
+  }
+
+  Future<void> _runTitleGeneration() async {
+    final config = ref.read(selectedAiConfigProvider);
+    if (config == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先配置AI模型')));
+      return;
+    }
+    final content = widget.controller.text;
+    widget.onClose();
+    final aiService = ref.read(aiServiceProvider);
+    final response = await aiService.send(
+      config: config,
+      systemPrompt: '你是番茄小说爆款标题生成器。标题要求：\n1. 长度：8-15字\n2. 风格：悬念式、爽点式、反转式\n3. 生成5个标题，按吸引力排序',
+      userMessage: content.isEmpty ? '请生成5个爆款标题' : '请根据以下章节内容生成5个爆款标题：\n\n$content',
+    );
+    if (mounted) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => TitleGeneratorResultPage(aiResponse: response),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -129,11 +205,11 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                 const SizedBox(width: 8),
                 _ActionChip(label: '润色', icon: Icons.brush, onTap: () => _sendMessage(presetAction: '请润色以下段落，改善语病、节奏和描写')),
                 const SizedBox(width: 8),
-                _ActionChip(label: '起标题', icon: Icons.title, onTap: () => _sendMessage(presetAction: '请为当前章节生成5个吸引人的标题')),
+                _ActionChip(label: '起标题', icon: Icons.title, onTap: () => _runTitleGeneration()),
                 const SizedBox(width: 8),
-                _ActionChip(label: '爽点检查', icon: Icons.bolt, onTap: () => _sendMessage(presetAction: '分析当前章节的爽点密度，给出评分和优化建议')),
+                _ActionChip(label: '爽点检查', icon: Icons.bolt, onTap: () => _runShuangdianCheck()),
                 const SizedBox(width: 8),
-                _ActionChip(label: '水文检测', icon: Icons.water_drop, onTap: () => _sendMessage(presetAction: '检测当前章节是否存在水文段落，给出精简建议')),
+                _ActionChip(label: '水文检测', icon: Icons.water_drop, onTap: () => _runWaterCheck()),
               ],
             ),
           ),
