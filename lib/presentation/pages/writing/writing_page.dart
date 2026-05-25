@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
+import 'package:novel_ide/presentation/pages/works/export_page.dart';
 
 class WritingPage extends ConsumerWidget {
   const WritingPage({super.key});
@@ -21,7 +22,21 @@ class WritingPage extends ConsumerWidget {
 
     // 否则显示引导页
     return Scaffold(
-      appBar: AppBar(title: const Text('写作')),
+      appBar: AppBar(
+        title: const Text('写作'),
+        actions: [
+          if (selectedNovel != null)
+            IconButton(
+              icon: const Icon(Icons.file_download_outlined),
+              tooltip: '导出',
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ExportPage(novelId: selectedNovel.id, novelTitle: selectedNovel.title),
+                ));
+              },
+            ),
+        ],
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

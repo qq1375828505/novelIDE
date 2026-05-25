@@ -7,6 +7,7 @@ import 'package:novel_ide/data/repositories/material_repository.dart';
 import 'package:uuid/uuid.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
 import 'package:novel_ide/presentation/pages/profile/profile_page.dart';
+import 'package:novel_ide/presentation/pages/works/export_page.dart';
 
 class MaterialsPage extends ConsumerStatefulWidget {
   const MaterialsPage({super.key});
@@ -58,6 +59,15 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
       appBar: AppBar(
         title: Text('${selectedNovel.title} · 资料'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: '导出',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => ExportPage(novelId: selectedNovel.id, novelTitle: selectedNovel.title),
+              ));
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: '设置',

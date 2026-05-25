@@ -23,6 +23,22 @@ class WorksPage extends ConsumerWidget {
         title: const Text('我的作品'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: '导出当前作品',
+            onPressed: () {
+              final novel = ref.read(selectedNovelProvider);
+              if (novel != null) {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ExportPage(novelId: novel.id, novelTitle: novel.title),
+                ));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('请先选择一部作品')),
+                );
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.folder_open_outlined),
             onPressed: () => _showImportDialog(context, ref),
           ),
