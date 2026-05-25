@@ -7,6 +7,7 @@ import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
 import 'package:novel_ide/data/repositories/novel_repository.dart';
+import 'package:novel_ide/presentation/pages/works/export_page.dart';
 
 class OutlinePage extends ConsumerWidget {
   const OutlinePage({super.key});
@@ -42,6 +43,15 @@ class OutlinePage extends ConsumerWidget {
       appBar: AppBar(
         title: Text('${selectedNovel.title} · 大纲'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: '导出',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => ExportPage(novelId: selectedNovel.id, novelTitle: selectedNovel.title),
+              ));
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _showAddVolumeDialog(context, ref, selectedNovel),
