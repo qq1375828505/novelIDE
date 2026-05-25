@@ -134,7 +134,9 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
                 description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
               );
               final list = ref.read(charactersProvider(novelId));
-              ref.read(charactersProvider(novelId).notifier).state = [...list, char];
+              final updated = [...list, char];
+              ref.read(charactersProvider(novelId).notifier).state = updated;
+              MaterialRepository().saveCharacters(novelId, updated);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
@@ -177,7 +179,9 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
                 description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
               );
               final list = ref.read(settingCardsProvider(novelId));
-              ref.read(settingCardsProvider(novelId).notifier).state = [...list, card];
+              final updated = [...list, card];
+              ref.read(settingCardsProvider(novelId).notifier).state = updated;
+              MaterialRepository().saveSettingCards(novelId, updated);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
@@ -345,7 +349,9 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
                 description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
               );
               final list = ref.read(plotHooksProvider(novelId));
-              ref.read(plotHooksProvider(novelId).notifier).state = [...list, hook];
+              final updated = [...list, hook];
+              ref.read(plotHooksProvider(novelId).notifier).state = updated;
+              MaterialRepository().savePlotHooks(novelId, updated);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
@@ -388,7 +394,9 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
                 source: sourceCtrl.text.trim().isEmpty ? null : sourceCtrl.text.trim(),
               );
               final list = ref.read(referencesProvider(novelId));
-              ref.read(referencesProvider(novelId).notifier).state = [...list, refModel];
+              final updated = [...list, refModel];
+              ref.read(referencesProvider(novelId).notifier).state = updated;
+              MaterialRepository().saveReferences(novelId, updated);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
@@ -438,6 +446,7 @@ class _CharacterTab extends ConsumerWidget {
                       onPressed: () {
                         final list = ref.read(charactersProvider(novelId)).where((c) => c.id != ch.id).toList();
                         ref.read(charactersProvider(novelId).notifier).state = list;
+                        MaterialRepository().saveCharacters(novelId, list);
                       },
                     ),
                   ],
@@ -492,6 +501,7 @@ class _SettingTab extends ConsumerWidget {
                       onPressed: () {
                         final list = ref.read(settingCardsProvider(novelId)).where((c) => c.id != card.id).toList();
                         ref.read(settingCardsProvider(novelId).notifier).state = list;
+                        MaterialRepository().saveSettingCards(novelId, list);
                       },
                     ),
                   ],
@@ -577,6 +587,7 @@ class _HookTab extends ConsumerWidget {
                   onPressed: () {
                     final list = ref.read(plotHooksProvider(novelId)).where((h) => h.id != hook.id).toList();
                     ref.read(plotHooksProvider(novelId).notifier).state = list;
+                    MaterialRepository().savePlotHooks(novelId, list);
                   },
                 ),
               ],
@@ -625,6 +636,7 @@ class _ReferenceTab extends ConsumerWidget {
                     onPressed: () {
                       final list = ref.read(referencesProvider(novelId)).where((r) => r.id != refModel.id).toList();
                       ref.read(referencesProvider(novelId).notifier).state = list;
+                      MaterialRepository().saveReferences(novelId, list);
                     },
                   ),
                 ],

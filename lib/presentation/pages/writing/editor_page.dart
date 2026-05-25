@@ -35,6 +35,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   bool _showAiDrawer = false;
   bool _showSearchDrawer = false;
   bool _showFindBar = false;
+  int _lastSavedWordCount = 0; // Guard against double-counting word stats
   final TextEditingController _findCtrl = TextEditingController();
   int _findIndex = 0;
   List<TextSelection> _findResults = [];
@@ -55,6 +56,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     final chapter = await ref.read(chapterRepoProvider).getChapter(widget.chapterId);
     if (chapter != null) {
       _controller.text = chapter.content;
+      _lastSavedWordCount = chapter.wordCount;
       ref.read(editorContentProvider.notifier).state = chapter.content;
       ref.read(wordCountProvider.notifier).state = chapter.wordCount;
       ref.read(saveStatusProvider.notifier).state = '已保存';
@@ -77,7 +79,6 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     final chapter = await ref.read(chapterRepoProvider).getChapter(widget.chapterId);
     if (chapter == null) return;
     final newWordCount = _controller.text.length;
-    final oldWordCount = chapter.wordCount;
     final updated = chapter.copyWith(
       content: _controller.text,
       wordCount: newWordCount,
@@ -85,11 +86,10 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     );
     await ref.read(chapterRepoProvider).updateChapter(updated, novel.title);
 
-    // Record daily word count delta
-    final delta = newWordCount - oldWordCount;
+    // Record daily word count delta (use _lastSavedWordCount guard to prevent double-counting)
+    final delta = newWordCount - _lastSavedWordCount;
     if (delta > 0) {
       await ref.read(statsRepoProvider).recordWords(novel.id, delta);
-      // Refresh today's count
       final todayWords = await ref.read(statsRepoProvider).getTodayWords();
       ref.read(todayWordsProvider.notifier).state = todayWords;
       // Check if daily goal reached
@@ -100,6 +100,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     }
 
     ref.read(saveStatusProvider.notifier).state = '已保存 ${DateFormat('HH:mm').format(DateTime.now())}';
+    _lastSavedWordCount = newWordCount;
     ref.invalidate(chaptersProvider(widget.novelId));
   }
 
