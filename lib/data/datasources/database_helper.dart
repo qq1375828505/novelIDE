@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:novel_ide/data/models/ai_config_model.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -18,7 +19,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'novel_ide.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -88,7 +89,8 @@ class DatabaseHelper {
         model_name TEXT NOT NULL,
         temperature REAL DEFAULT 1.0,
         max_tokens INTEGER DEFAULT 4096,
-        is_local INTEGER DEFAULT 0
+        is_local INTEGER DEFAULT 0,
+        protocol TEXT DEFAULT 'openaiCompatible'
       )
     ''');
 
@@ -114,6 +116,10 @@ class DatabaseHelper {
     }
     if (oldVersion < 3) {
       await _createBillingTable(db);
+    }
+    if (oldVersion < 4) {
+      // 添加 protocol 字段到 ai_configs 表
+      await db.execute('ALTER TABLE ai_configs ADD COLUMN protocol TEXT DEFAULT "openaiCompatible"');
     }
   }
 
@@ -158,6 +164,47 @@ class DatabaseHelper {
   Future<void> insertAiConfig(Map<String, dynamic> config) async {
     final db = await database;
     await db.insert('ai_configs', config, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  /// 更新 ai_config 以包含 protocol 字段
+  Map<String, dynamic> toDbMap(AiConfig config) {
+    return {
+      'id': config.id,
+      'name': config.name,
+      'api_url': config.apiUrl,
+      'model_name': config.modelName,
+      'temperature': config.temperature,
+      'max_tokens': config.maxTokens,
+      'is_local': config.isLocal ? 1 : 0,
+      'protocol': config.protocol.name, // 保存枚举的字符串值
+    };
+  }
+
+  /// 从数据库 map 转换为 AiConfig 对象
+  AiConfig fromDbMap(Map<String, dynamic> map, String? apiKey) {
+    // 转换 protocol 字符串为枚举
+    ApiProtocol protocol = ApiProtocol.openaiCompatible;
+    try {
+      if (map['protocol'] != null) {
+        protocol = ApiProtocol.values.firstWhere(
+          (e) => e.name == map['protocol'],
+          orElse: () => ApiProtocol.openaiCompatible,
+        );
+      }
+    } catch (_) {
+      // 无效值时使用默认
+    }
+    return AiConfig(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      apiUrl: map['api_url'] as String,
+      modelName: map['model_name'] as String,
+      apiKey: apiKey,
+      temperature: (map['temperature'] as num).toDouble(),
+      maxTokens: map['max_tokens'] as int,
+      isLocal: (map['is_local'] as int) == 1,
+      protocol: protocol,
+    );
   }
 
   Future<void> deleteAiConfig(String id) async {

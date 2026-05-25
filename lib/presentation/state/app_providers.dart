@@ -154,16 +154,7 @@ Future<void> loadAiConfigs(WidgetRef ref) async {
   final configs = <AiConfig>[];
   for (final row in rows) {
     final apiKey = await secureStorage.readApiKey(row['id'] as String);
-    configs.add(AiConfig(
-      id: row['id'] as String,
-      name: row['name'] as String,
-      apiUrl: row['api_url'] as String,
-      modelName: row['model_name'] as String,
-      apiKey: apiKey,
-      temperature: (row['temperature'] as num).toDouble(),
-      maxTokens: row['max_tokens'] as int,
-      isLocal: (row['is_local'] as int) == 1,
-    ));
+    configs.add(db.fromDbMap(row, apiKey));
   }
   ref.read(aiConfigsProvider.notifier).state = configs;
   // Auto-select first config if none selected
