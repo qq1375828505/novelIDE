@@ -2208,3 +2208,41 @@ AI 对话作为独立 Tab（写作/作品/大纲/资料/**AI对话**），不再
 - 底部菜单统一风格：白色圆角容器 + 拖拽指示条 + 圆角图标容器
 - 文件选择一步完成，直接唤起系统文件管理器
 
+---
+
+## 31. V1.3.5 Bug修复详情
+
+### 31.1 修复导出保存到本地失败
+
+**问题现象**：用户点击「保存到本地」按钮后报错：`Invalid argument(s): Bytes are required on Android & iOS when saving a file.`
+
+**根因分析**：`FilePicker.platform.saveFile()` 在 Android/iOS 平台上必须传入 `bytes` 参数，否则无法正常保存文件。之前的代码只传了文件名和扩展名，没有传入实际的文件字节数据。
+
+**修复方案**：
+```dart
+// 修复前
+final outputPath = await FilePicker.platform.saveFile(
+  fileName: '${widget.novelTitle}_导出.zip',
+  type: FileType.custom,
+  allowedExtensions: ['zip'],
+);
+await File(zipPath).copy(outputPath); // Android/iOS 上不可用
+
+// 修复后
+final outputPath = await FilePicker.platform.saveFile(
+  fileName: '${widget.novelTitle}_导出.zip',
+  type: FileType.custom,
+  allowedExtensions: ['zip'],
+  bytes: Uint8List.fromList(zipBytes), // 直接传入字节
+);
+// saveFile 收到 bytes 后会自动写入，无需手动 copy
+```
+
+### 31.2 修复 _showImportDialog 类作用域错误
+
+**问题现象**：编译失败，报错 `The method '_showImportDialog' isn't defined for the class 'NovelDetailPage'`
+
+**根因分析**：`_showImportDialog` 方法被错误地放在了 `NovelDetailPage` 类的花括号外面，变成了顶层函数，导致类内部无法调用。
+
+**修复方案**：将该方法移入 `NovelDetailPage` 类内部。
+

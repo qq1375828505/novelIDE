@@ -8,7 +8,7 @@
 
 ## 📥 下载安装
 
-最新版：**V1.3.4** — [直接下载 APK](https://github.com/qq1375828505/DAXIE666/releases/download/v1.3.4/novel-ide-android-v1.3.4.apk)
+最新版：**V1.3.5** — [直接下载 APK](https://github.com/qq1375828505/DAXIE666/releases/download/v1.3.5/novel-ide-android-v1.3.5.apk)
 
 > 支持 Android 6.0+（minSdk 23），无需注册，安装即用。
 
@@ -132,6 +132,7 @@ flutter build apk --release
 | V1.3.2 | 运行时权限、卷长按菜单、全页面导出、19项权限 |
 | V1.3.3 | 修复内容丢失Bug、导出保存到本地、dispose强制保存、路径一致性修复 |
 | V1.3.4 | 小说文件导入(TXT/MD/DOCX)、AI智能分析填充资料库、导出全选/全不选、界面交互优化 |
+| V1.3.5 | 修复导出保存到本地失败(FilePicker bytes参数)、修复_showImportDialog类作用域错误 |
 
 ## 📄 License
 
