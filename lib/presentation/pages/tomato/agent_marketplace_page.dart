@@ -72,21 +72,126 @@ class _TomatoZoneView extends ConsumerWidget {
   }
 }
 
-class _CustomAgentsView extends ConsumerWidget {
+class _CustomAgentsView extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.code, size: 64, color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text('自定义Agent', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[500])),
-          const SizedBox(height: 8),
-          Text('V1 支持内置Agent运行\n后续版本支持自定义YAML导入', style: TextStyle(fontSize: 13, color: Colors.grey[400]), textAlign: TextAlign.center),
+  ConsumerState<_CustomAgentsView> createState() => _CustomAgentsViewState();
+}
+
+class _CustomAgentsViewState extends ConsumerState<_CustomAgentsView> {
+  List<TomatoAgent> _customAgents = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomAgents();
+  }
+
+  void _loadCustomAgents() {
+    // Load from hive or shared prefs - for now use in-memory
+    // In production, persist to a JSON file
+  }
+
+  void _showCreateDialog() {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final promptCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('创建自定义 Agent'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Agent 名称', hintText: '例如：我的大纲助手')),
+              const SizedBox(height: 12),
+              TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述'), maxLines: 2),
+              const SizedBox(height: 12),
+              TextField(controller: promptCtrl, decoration: const InputDecoration(labelText: 'System Prompt', hintText: '定义 Agent 的角色和行为'), maxLines: 5),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isEmpty || promptCtrl.text.trim().isEmpty) return;
+              final agent = TomatoAgent(
+                id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+                name: nameCtrl.text.trim(),
+                icon: '🤖',
+                description: descCtrl.text.trim().isEmpty ? '自定义Agent' : descCtrl.text.trim(),
+                systemPrompt: promptCtrl.text.trim(),
+                isBuiltin: false,
+              );
+              setState(() => _customAgents.add(agent));
+              Navigator.pop(ctx);
+            },
+            child: const Text('创建'),
+          ),
         ],
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Create button
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('创建自定义 Agent'),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              onPressed: _showCreateDialog,
+            ),
+          ),
+        ),
+        // Agent list
+        Expanded(
+          child: _customAgents.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.code, size: 64, color: Colors.grey[300]),
+                      const SizedBox(height: 16),
+                      Text('还没有自定义 Agent', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
+                      const SizedBox(height: 8),
+                      Text('点击上方按钮创建', style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _customAgents.length,
+                  itemBuilder: (context, index) {
+                    final agent = _customAgents[index];
+                    return _AgentCard(
+                      agent: agent,
+                      isBuiltin: false,
+                      onRun: () => _runAgent(agent),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  void _runAgent(TomatoAgent agent) {
+    final config = ref.read(selectedAiConfigProvider);
+    if (config == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先配置AI模型')));
+      return;
+    }
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => _AgentRunPage(agent: agent, config: config),
+    ));
   }
 }
 

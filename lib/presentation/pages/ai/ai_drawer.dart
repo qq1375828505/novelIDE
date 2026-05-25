@@ -7,6 +7,7 @@ import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/presentation/pages/tomato/shuangdian_report_page.dart';
 import 'package:novel_ide/presentation/pages/tomato/water_report_page.dart';
 import 'package:novel_ide/presentation/pages/tomato/title_generator_result_page.dart';
+import 'package:novel_ide/presentation/pages/ai/full_text_review_page.dart';
 
 class AiDrawer extends ConsumerStatefulWidget {
   final String novelId;
@@ -63,6 +64,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
         config: config,
         systemPrompt: systemPrompt,
         userMessage: '当前章节内容：\n$context\n\n用户请求：$text',
+        taskType: 'chat',
       );
       setState(() {
         _messages.add({'role': 'assistant', 'content': aiText});
@@ -106,6 +108,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
         config: config,
         systemPrompt: '你是番茄小说爽点密度检查器。分析规则：\n1. 爽点分类：身份揭露、打脸、实力碾压、财富展示、情感反转、系统奖励\n2. 密度标准：每3000字至少2-3个爽点\n3. 评分标准：0-10分\n4. 输出格式：评分数+爽点列表(位置/类型/强度)+优化建议',
         userMessage: '请分析以下章节的爽点密度：\n\n$content',
+        taskType: 'analysis',
       );
       if (mounted) {
         Navigator.push(context, MaterialPageRoute(
@@ -136,6 +139,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
         config: config,
         systemPrompt: '你是番茄小说水文检测器。检测规则：\n1. 水文分类：废话对话、冗余环境描写、无推进日常、重复说明\n2. 水文率：<15%优秀，15-25%及格，>25%需精简\n3. 输出格式：水文率+水文段落列表+优化方案',
         userMessage: '请检测以下章节的水文：\n\n$content',
+        taskType: 'analysis',
       );
       if (mounted) {
         Navigator.push(context, MaterialPageRoute(
@@ -162,6 +166,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
         config: config,
         systemPrompt: '你是番茄小说爆款标题生成器。标题要求：\n1. 长度：8-15字\n2. 风格：悬念式、爽点式、反转式\n3. 生成5个标题，按吸引力排序',
         userMessage: content.isEmpty ? '请生成5个爆款标题' : '请根据以下章节内容生成5个爆款标题：\n\n$content',
+        taskType: 'titleGen',
       );
       if (mounted) {
         Navigator.push(context, MaterialPageRoute(
@@ -225,6 +230,13 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                 _ActionChip(label: '爽点检查', icon: Icons.bolt, onTap: () => _runShuangdianCheck()),
                 const SizedBox(width: 8),
                 _ActionChip(label: '水文检测', icon: Icons.water_drop, onTap: () => _runWaterCheck()),
+                const SizedBox(width: 8),
+                _ActionChip(label: '全文审查', icon: Icons.fact_check, onTap: () {
+                  widget.onClose();
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => FullTextReviewPage(novelId: widget.novelId, novelTitle: ''),
+                  ));
+                }),
               ],
             ),
           ),

@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/search_result_model.dart';
+import 'package:novel_ide/data/models/material_models.dart';
+import 'package:novel_ide/data/repositories/material_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class SearchDrawer extends ConsumerStatefulWidget {
   final String novelId;
@@ -166,18 +169,42 @@ class _SearchDrawerState extends ConsumerState<SearchDrawer> {
                           ? Text(result.snippet, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: Colors.grey[500]))
                           : null,
                       trailing: PopupMenuButton<String>(
-                        onSelected: (action) {
+                        onSelected: (action) async {
                           if (action == 'copy') {
                             Clipboard.setData(ClipboardData(text: '${result.title}\n${result.url}'));
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已复制')));
                           } else if (action == 'save') {
-                            // Will be handled by parent
+                            // Save to reference library
+                            final refMaterial = ReferenceMaterial(
+                              id: const Uuid().v4(),
+                              novelId: widget.novelId,
+                              title: result.title,
+                              content: result.snippet,
+                              source: result.url,
+                              sourceUrl: result.url,
+                            );
+                            // Load existing references, add new one, save
+                            final repo = MaterialRepository();
+                            final existing = await repo.getReferences(widget.novelId);
+                            final updated = [...existing, refMaterial];
+                            await repo.saveReferences(widget.novelId, updated);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已保存到参考资料库')));
+                            }
+                          } else if (action == 'insert') {
+                            // Insert citation into editor
+                            final text = '[${result.title}](${result.url})';
+                            Clipboard.setData(ClipboardData(text: text));
                             widget.onClose();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('引用已复制，粘贴到编辑器')));
+                            }
                           }
                         },
                         itemBuilder: (context) => [
                           const PopupMenuItem(value: 'copy', child: Text('复制链接')),
                           const PopupMenuItem(value: 'save', child: Text('保存到资料库')),
+                          const PopupMenuItem(value: 'insert', child: Text('插入引用')),
                         ],
                       ),
                     ),
