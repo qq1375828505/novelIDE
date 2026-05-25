@@ -18,7 +18,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'novel_ide.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -104,11 +104,16 @@ class DatabaseHelper {
 
     // V2: daily writing stats
     await _createDailyWordsTable(db);
+    // V3: billing records
+    await _createBillingTable(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _createDailyWordsTable(db);
+    }
+    if (oldVersion < 3) {
+      await _createBillingTable(db);
     }
   }
 
@@ -123,6 +128,23 @@ class DatabaseHelper {
     ''');
     await db.execute('''
       CREATE INDEX idx_daily_words_date ON daily_words(date);
+    ''');
+  }
+
+  Future<void> _createBillingTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE billing_records (
+        id TEXT PRIMARY KEY,
+        config_id TEXT,
+        model TEXT,
+        task_type TEXT,
+        token_count INTEGER DEFAULT 0,
+        estimated_cost REAL DEFAULT 0.0,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_billing_created ON billing_records(created_at);
     ''');
   }
 

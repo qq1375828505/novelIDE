@@ -55,6 +55,7 @@ class _PolishEnginePageState extends ConsumerState<PolishEnginePage> {
         config: config,
         systemPrompt: preset?.systemPrompt ?? '你是一位网文精修专家。分析以下文本，针对${selectedDims.join('、')}维度找出问题段落，给出原文、问题和修改建议。',
         userMessage: '请对以下章节进行${selectedDims.join('、')}维度的精修分析。\n\n${widget.chapterContent}',
+        taskType: 'polish',
       );
 
       _parseResult(aiText);
@@ -258,6 +259,7 @@ class _PolishEnginePageState extends ConsumerState<PolishEnginePage> {
                                             config: config,
                                             systemPrompt: '你是网文精修专家。请重新优化以下段落的${item.dimension}方面：',
                                             userMessage: '原文：${item.original}\n\n请给出更好的修改建议。',
+                                            taskType: 'polish',
                                           );
                                           setState(() {
                                             item.suggestion = response;
