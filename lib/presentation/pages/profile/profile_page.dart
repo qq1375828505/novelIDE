@@ -545,7 +545,7 @@ class _AiConfigTile extends ConsumerWidget {
             const SizedBox(width: 8),
             PopupMenuButton(
               icon: const Icon(Icons.more_vert, size: 20),
-              itemBuilder: (context) => [
+              itemBuilder: (context) => <PopupMenuEntry<String>>[
                 PopupMenuItem(
                   value: 'use',
                   enabled: !isSelected,
@@ -555,7 +555,7 @@ class _AiConfigTile extends ConsumerWidget {
                   value: 'edit',
                   child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('编辑配置')]),
                 ),
-                const PopupMenuDivider(),
+                const PopupMenuDivider<String>(),
                 const PopupMenuItem(
                   value: 'delete',
                   child: Row(children: [Icon(Icons.delete_outline, size: 18, color: Colors.red), SizedBox(width: 8), Text('删除', style: TextStyle(color: Colors.red))]),
