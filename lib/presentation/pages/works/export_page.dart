@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
@@ -321,14 +322,15 @@ class _ExportPageState extends State<ExportPage> {
         await Share.shareXFiles([file], text: '${widget.novelTitle} 作品导出');
       } else {
         // 保存到本地模式：让用户选择保存位置
+        // Android/iOS 需要 bytes 参数
         final outputPath = await FilePicker.platform.saveFile(
           dialogTitle: '选择保存位置',
           fileName: '${widget.novelTitle}_导出.zip',
           type: FileType.custom,
           allowedExtensions: ['zip'],
+          bytes: Uint8List.fromList(zipBytes),
         );
         if (outputPath != null) {
-          await File(zipPath).copy(outputPath);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('已保存到: $outputPath')),
