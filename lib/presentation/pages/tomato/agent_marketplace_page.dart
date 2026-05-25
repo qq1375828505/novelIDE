@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/tomato_agent_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
@@ -134,21 +137,82 @@ class _CustomAgentsViewState extends ConsumerState<_CustomAgentsView> {
     );
   }
 
+  void _importAgent() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['yaml', 'yml', 'json', 'md', 'txt'],
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final file = File(result.files.first.path!);
+      final content = await file.readAsString();
+      final fileName = result.files.first.name;
+
+      // Try to parse as JSON, otherwise treat as plain text prompt
+      Map<String, dynamic>? agentData;
+      try {
+        agentData = jsonDecode(content) as Map<String, dynamic>;
+      } catch (_) {
+        agentData = {
+          'name': fileName.replaceAll(RegExp(r'\.(yaml|yml|json|md|txt)$'), ''),
+          'systemPrompt': content.trim(),
+        };
+      }
+
+      if (agentData == null) return;
+
+      final agent = TomatoAgent(
+        id: 'imported_${DateTime.now().millisecondsSinceEpoch}',
+        name: agentData['name'] ?? agentData['title'] ?? fileName,
+        icon: agentData['icon'] ?? '📥',
+        description: agentData['description'] ?? '导入的 Agent',
+        systemPrompt: agentData['systemPrompt'] ?? agentData['prompt'] ?? content.trim(),
+        isBuiltin: false,
+      );
+
+      setState(() => _customAgents.add(agent));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已导入 Agent: ${agent.name}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('导入失败: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Create button
+        // Create & Import buttons
         Padding(
           padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('创建自定义 Agent'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              onPressed: _showCreateDialog,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('创建'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  onPressed: _showCreateDialog,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('导入'),
+                  onPressed: _importAgent,
+                ),
+              ),
+            ],
           ),
         ),
         // Agent list

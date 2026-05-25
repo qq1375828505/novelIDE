@@ -6,6 +6,8 @@ import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/presentation/pages/works/novel_detail_page.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
 class WorksPage extends ConsumerWidget {
@@ -261,16 +263,17 @@ class _NovelCard extends ConsumerWidget {
                   if (value == 'export_pack') {
                     try {
                       final path = await fs.getProjectDir(novel.id, novel.title);
-                      final result = await FilePicker.platform.saveFile(
-                        fileName: '${novel.title}.novelpack',
-                      );
-                      if (result != null) {
-                        await fs.exportNovelPack(path, result);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('已导出到 $result')),
-                          );
-                        }
+                      // Create zip to temp file first, then share
+                      final tempDir = await getTemporaryDirectory();
+                      final tempPath = '${tempDir.path}/${novel.title}.novelpack';
+                      await fs.exportNovelPack(path, tempPath);
+                      // Share the file
+                      final file = XFile(tempPath);
+                      await Share.shareXFiles([file], text: '${novel.title} 作品包');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('已导出作品包')),
+                        );
                       }
                     } catch (e) {
                       if (context.mounted) {
