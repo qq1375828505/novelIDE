@@ -9,6 +9,7 @@ import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/services/config_service.dart';
 import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
 import 'package:novel_ide/data/services/model_test_service.dart';
+import 'package:novel_ide/presentation/pages/profile/app_config_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -132,6 +133,16 @@ class ProfilePage extends ConsumerWidget {
             subtitle: Text('字号：${fontSize.toInt()}px'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showFontSettingsDialog(context, ref),
+          ),
+          // Software config
+          ListTile(
+            leading: const Icon(Icons.code, color: Colors.teal),
+            title: const Text('软件配置'),
+            subtitle: const Text('修改配置文件自定义软件行为'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AppConfigPage()));
+            },
           ),
           const Divider(),
 
