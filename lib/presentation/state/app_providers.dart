@@ -13,6 +13,7 @@ import 'package:novel_ide/data/repositories/volume_repository.dart';
 import 'package:novel_ide/data/repositories/material_repository.dart';
 import 'package:novel_ide/data/repositories/stats_repository.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
+import 'package:novel_ide/data/datasources/secure_storage_datasource.dart';
 import 'package:novel_ide/data/services/config_service.dart';
 
 final novelRepoProvider = Provider((ref) => NovelRepository());
@@ -148,16 +149,22 @@ final categoryFilterProvider = StateProvider<String>((ref) => 'all');
 /// Load AI configs from SQLite into provider
 Future<void> loadAiConfigs(WidgetRef ref) async {
   final db = DatabaseHelper();
+  final secureStorage = SecureStorageDataSource();
   final rows = await db.getAllAiConfigs();
-  final configs = rows.map((row) => AiConfig(
-    id: row['id'] as String,
-    name: row['name'] as String,
-    apiUrl: row['api_url'] as String,
-    modelName: row['model_name'] as String,
-    temperature: (row['temperature'] as num).toDouble(),
-    maxTokens: row['max_tokens'] as int,
-    isLocal: (row['is_local'] as int) == 1,
-  )).toList();
+  final configs = <AiConfig>[];
+  for (final row in rows) {
+    final apiKey = await secureStorage.readApiKey(row['id'] as String);
+    configs.add(AiConfig(
+      id: row['id'] as String,
+      name: row['name'] as String,
+      apiUrl: row['api_url'] as String,
+      modelName: row['model_name'] as String,
+      apiKey: apiKey,
+      temperature: (row['temperature'] as num).toDouble(),
+      maxTokens: row['max_tokens'] as int,
+      isLocal: (row['is_local'] as int) == 1,
+    ));
+  }
   ref.read(aiConfigsProvider.notifier).state = configs;
   // Auto-select first config if none selected
   if (configs.isNotEmpty && ref.read(selectedAiConfigProvider) == null) {

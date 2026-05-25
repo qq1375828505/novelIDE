@@ -49,11 +49,16 @@ class StatsRepository {
   }
 
   /// Calculate current writing streak (consecutive days with words > 0).
+  /// If today has no words yet, count from yesterday (don't break streak just because it's morning).
   Future<int> calculateStreak() async {
     final stats = await getDailyStats(days: 365);
     int streak = 0;
-    // Count from today backwards
-    for (int i = stats.length - 1; i >= 0; i--) {
+    // If today has no words, start counting from yesterday
+    int startIdx = stats.length - 1;
+    if (startIdx >= 0 && stats[startIdx].wordCount == 0) {
+      startIdx--; // skip today if empty
+    }
+    for (int i = startIdx; i >= 0; i--) {
       if (stats[i].wordCount > 0) {
         streak++;
       } else {
