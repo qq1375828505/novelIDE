@@ -420,15 +420,7 @@ class ProfilePage extends ConsumerWidget {
                 if (keyCtrl.text.isNotEmpty) {
                   await SecureStorageDataSource().writeApiKey(config.id, keyCtrl.text.trim());
                 }
-                await DatabaseHelper().insertAiConfig({
-                  'id': config.id,
-                  'name': config.name,
-                  'api_url': config.apiUrl,
-                  'model_name': config.modelName,
-                  'temperature': config.temperature,
-                  'max_tokens': config.maxTokens,
-                  'is_local': config.isLocal ? 1 : 0,
-                });
+                await DatabaseHelper().insertAiConfig(DatabaseHelper().toDbMap(config));
                 final currentList = ref.read(aiConfigsProvider);
                 ref.read(aiConfigsProvider.notifier).state = [...currentList, config];
                 ref.read(selectedAiConfigProvider.notifier).state = config;
