@@ -288,61 +288,71 @@ class ProfilePage extends ConsumerWidget {
                 const SizedBox(height: 12),
                 TextField(controller: urlCtrl, decoration: const InputDecoration(labelText: 'API 地址')),
                 const SizedBox(height: 12),
-                // Model field with fetch button
-                Row(
-                  children: [
-                    Expanded(
-                      child: fetchedModels.isNotEmpty
-                          ? DropdownButtonFormField<String>(
-                              value: fetchedModels.contains(modelCtrl.text) ? modelCtrl.text : null,
-                              hint: Text(modelCtrl.text.isEmpty ? '选择模型' : modelCtrl.text),
-                              items: fetchedModels.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 13)))).toList(),
-                              onChanged: (v) {
-                                if (v != null) modelCtrl.text = v;
-                                setDialogState(() {});
-                              },
-                              decoration: const InputDecoration(labelText: '模型名'),
-                            )
-                          : TextField(controller: modelCtrl, decoration: const InputDecoration(labelText: '模型名', hintText: '例如：gpt-4o / claude-sonnet-4-20250514')),
+                // Model field
+                TextField(controller: modelCtrl, decoration: const InputDecoration(labelText: '模型名', hintText: '例如：gpt-4o / claude-sonnet-4-20250514')),
+                const SizedBox(height: 8),
+                // Fetch models button (prominent)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: isFetchingModels
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.download, size: 18),
+                    label: Text(isFetchingModels ? '获取中...' : '获取模型列表'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    const SizedBox(width: 8),
-                    // Fetch models button
-                    IconButton(
-                      icon: isFetchingModels
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.download, size: 20),
-                      tooltip: '获取模型列表',
-                      onPressed: isFetchingModels ? null : () async {
-                        setDialogState(() => isFetchingModels = true);
-                        try {
-                          final tempConfig = AiConfig(
-                            id: 'temp', name: 'temp',
-                            apiUrl: urlCtrl.text, modelName: modelCtrl.text,
-                            apiKey: keyCtrl.text.isNotEmpty ? keyCtrl.text : null,
-                            protocol: selectedProtocol,
+                    onPressed: isFetchingModels ? null : () async {
+                      setDialogState(() => isFetchingModels = true);
+                      try {
+                        final tempConfig = AiConfig(
+                          id: 'temp', name: 'temp',
+                          apiUrl: urlCtrl.text, modelName: modelCtrl.text,
+                          apiKey: keyCtrl.text.isNotEmpty ? keyCtrl.text : null,
+                          protocol: selectedProtocol,
+                        );
+                        final models = await ModelTestService().fetchModels(tempConfig);
+                        setDialogState(() {
+                          fetchedModels = models;
+                          isFetchingModels = false;
+                        });
+                        if (models.isNotEmpty && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('获取到 ${models.length} 个模型，请在下方选择')),
                           );
-                          final models = await ModelTestService().fetchModels(tempConfig);
-                          setDialogState(() {
-                            fetchedModels = models;
-                            isFetchingModels = false;
-                          });
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('获取到 ${models.length} 个模型')),
-                            );
-                          }
-                        } catch (e) {
-                          setDialogState(() => isFetchingModels = false);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('获取失败: $e')),
-                            );
-                          }
                         }
-                      },
-                    ),
-                  ],
+                      } catch (e) {
+                        setDialogState(() => isFetchingModels = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('获取失败: $e'), backgroundColor: Colors.orange),
+                          );
+                        }
+                      }
+                    },
+                  ),
                 ),
+                // Model dropdown (when fetched)
+                if (fetchedModels.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: fetchedModels.contains(modelCtrl.text) ? modelCtrl.text : null,
+                    hint: const Text('从列表选择模型'),
+                    items: fetchedModels.map((m) => DropdownMenuItem(
+                      value: m,
+                      child: Text(m, style: const TextStyle(fontSize: 13)),
+                    )).toList(),
+                    onChanged: (v) {
+                      if (v != null) modelCtrl.text = v;
+                      setDialogState(() {});
+                    },
+                    decoration: InputDecoration(
+                      labelText: '可用模型 (${fetchedModels.length})',
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextField(controller: keyCtrl, decoration: const InputDecoration(labelText: 'API Key', hintText: '可选（本地模型可不填）'), obscureText: true),
                 const SizedBox(height: 12),
