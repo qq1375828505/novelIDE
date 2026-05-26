@@ -6,6 +6,7 @@ import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
+import 'package:novel_ide/data/services/user_memory.dart';
 
 /// AI chat session model.
 class AiChatSession {
@@ -90,6 +91,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         }
       } catch (_) {}
 
+      // Load user-level global memory
+      String userMemoryContext = '';
+      try {
+        userMemoryContext = await UserMemory.getForAiContext();
+      } catch (_) {}
+
       // Auto-compact if too many messages (>20 pairs = 40 messages)
       if (_currentSession!.messages.length > 40) {
         await _compactMessages(config);
@@ -98,7 +105,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
       final aiService = ref.read(aiServiceProvider);
       final aiText = await aiService.send(
         config: config,
-        systemPrompt: '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext',
+        systemPrompt: '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext',
         userMessage: text,
         taskType: 'chat',
       );

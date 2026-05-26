@@ -9,6 +9,7 @@ import 'package:novel_ide/presentation/pages/tomato/water_report_page.dart';
 import 'package:novel_ide/presentation/pages/tomato/title_generator_result_page.dart';
 import 'package:novel_ide/presentation/pages/ai/full_text_review_page.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
+import 'package:novel_ide/data/services/user_memory.dart';
 
 class AiDrawer extends ConsumerStatefulWidget {
   final String novelId;
@@ -71,9 +72,15 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
         }
       } catch (_) {}
 
+      // Load user-level global memory
+      String userMemoryContext = '';
+      try {
+        userMemoryContext = await UserMemory.getForAiContext();
+      } catch (_) {}
+
       final aiText = await aiService.send(
         config: config,
-        systemPrompt: '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext',
+        systemPrompt: '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext',
         userMessage: '当前章节内容：\n$context\n\n用户请求：$text',
         taskType: 'chat',
       );
