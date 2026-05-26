@@ -85,7 +85,8 @@ class NovelImportService {
         'author': '',
         'description': '从文件导入：${p.basename(filePath)}',
         'status': 'ongoing',
-        'word_count': content.length,
+        'total_word_count': content.length,
+        'chapter_count': chapters.length,
         'created_at': now,
         'updated_at': now,
       });
