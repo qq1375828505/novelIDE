@@ -30,9 +30,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.debug
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 禁用代码混淆，避免Flutter白屏问题
+            // Flutter已有Tree Shaking优化，不需要ProGuard
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
