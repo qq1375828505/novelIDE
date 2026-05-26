@@ -12,6 +12,7 @@ import 'package:novel_ide/data/services/config_service.dart';
 import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
 import 'package:novel_ide/data/services/model_test_service.dart';
 import 'package:novel_ide/presentation/pages/profile/app_config_page.dart';
+import 'package:novel_ide/presentation/pages/profile/user_memory_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -56,6 +57,18 @@ class ProfilePage extends ConsumerWidget {
           else
             ...configs.map((config) => _AiConfigTile(config: config)),
           const Divider(),
+
+          _SectionHeader(title: 'AI 写作'),
+          ListTile(
+            leading: const Icon(Icons.psychology, color: AppColors.secondary),
+            title: const Text('用户记忆'),
+            subtitle: const Text('记录您的写作风格和AI偏好，AI对话时自动读取'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const UserMemoryPage()));
+            },
+          ),
+          const SizedBox(height: 4),
 
           _SectionHeader(title: '番茄写作'),
           ListTile(
