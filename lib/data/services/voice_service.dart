@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:flutter_tts/flutter_tts.dart';
 
 /// 语音服务 - 封装语音识别和语音合成
+/// 语音合成使用 Android 原生 TTS（通过 MethodChannel），避免 flutter_tts 的 Kotlin 兼容问题
 class VoiceService {
+  static const _channel = MethodChannel('com.example.novel_ide/tts');
+
   final stt.SpeechToText _speech = stt.SpeechToText();
-  final FlutterTts _tts = FlutterTts();
 
   bool _isListening = false;
   bool _isSpeaking = false;
@@ -37,26 +39,12 @@ class VoiceService {
       },
     );
 
-    // 初始化语音合成
-    await _tts.setLanguage(_localeId);
-    await _tts.setSpeechRate(0.5);
-    await _tts.setVolume(1.0);
-    await _tts.setPitch(1.0);
-
-    _tts.setStartHandler(() {
-      _isSpeaking = true;
-      onSpeakingChanged?.call(true);
-    });
-
-    _tts.setCompletionHandler(() {
-      _isSpeaking = false;
-      onSpeakingChanged?.call(false);
-    });
-
-    _tts.setErrorHandler((msg) {
-      _isSpeaking = false;
-      onSpeakingChanged?.call(false);
-    });
+    // 初始化原生 TTS
+    try {
+      await _channel.invokeMethod('initTTS', {'locale': _localeId});
+    } catch (e) {
+      debugPrint('TTS初始化失败: $e');
+    }
 
     return _speechAvailable;
   }
@@ -99,38 +87,66 @@ class VoiceService {
     }
   }
 
-  /// 语音合成 - 朗读文字
+  /// 语音合成 - 朗读文字（通过原生 TTS）
   Future<void> speak(String text) async {
     if (_isSpeaking) {
-      await _tts.stop();
+      await stopSpeaking();
     }
-    await _tts.speak(text);
+    _isSpeaking = true;
+    onSpeakingChanged?.call(true);
+    try {
+      await _channel.invokeMethod('speak', {'text': text});
+    } catch (e) {
+      debugPrint('TTS朗读失败: $e');
+    }
+    _isSpeaking = false;
+    onSpeakingChanged?.call(false);
   }
 
   /// 停止朗读
   Future<void> stopSpeaking() async {
-    await _tts.stop();
+    try {
+      await _channel.invokeMethod('stop');
+    } catch (e) {
+      debugPrint('TTS停止失败: $e');
+    }
+    _isSpeaking = false;
+    onSpeakingChanged?.call(false);
   }
 
   /// 设置语速
   Future<void> setSpeechRate(double rate) async {
-    await _tts.setSpeechRate(rate);
+    try {
+      await _channel.invokeMethod('setSpeechRate', {'rate': rate});
+    } catch (e) {
+      debugPrint('设置语速失败: $e');
+    }
   }
 
   /// 设置音调
   Future<void> setPitch(double pitch) async {
-    await _tts.setPitch(pitch);
+    try {
+      await _channel.invokeMethod('setPitch', {'pitch': pitch});
+    } catch (e) {
+      debugPrint('设置音调失败: $e');
+    }
   }
 
   /// 设置语言
   Future<void> setLanguage(String language) async {
     _localeId = language;
-    await _tts.setLanguage(language);
+    try {
+      await _channel.invokeMethod('setLanguage', {'locale': language});
+    } catch (e) {
+      debugPrint('设置语言失败: $e');
+    }
   }
 
   /// 释放资源
   void dispose() {
     _speech.stop();
-    _tts.stop();
+    try {
+      _channel.invokeMethod('shutdown');
+    } catch (_) {}
   }
 }
