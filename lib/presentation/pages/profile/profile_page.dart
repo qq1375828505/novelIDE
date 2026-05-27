@@ -13,6 +13,7 @@ import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
 import 'package:novel_ide/data/services/model_test_service.dart';
 import 'package:novel_ide/presentation/pages/profile/app_config_page.dart';
 import 'package:novel_ide/presentation/pages/profile/user_memory_page.dart';
+import 'package:novel_ide/presentation/pages/profile/skill_manage_page.dart';
 import 'package:novel_ide/presentation/widgets/top_snackbar.dart';
 
 /// 根据 URL 自动识别 API 协议类型
@@ -274,6 +275,19 @@ class ProfilePage extends ConsumerWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const StatsPage()),
+              );
+            },
+          ),
+          // Skills entry
+          ListTile(
+            leading: const Icon(Icons.auto_awesome, color: Colors.deepPurple),
+            title: const Text('写作技能'),
+            subtitle: const Text('管理和自定义AI写作技巧'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SkillManagePage()),
               );
             },
           ),

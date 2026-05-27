@@ -224,6 +224,22 @@ class WorkspaceAgent {
         'workflow_name': '工作流名称：post_chapter_check（章节检查）/ full_review（全文审查）/ outline_refresh（大纲刷新）',
       },
     ),
+
+    // ====== Skill工具 ======
+    AgentTool(
+      name: 'get_skills',
+      description: '获取所有已启用的写作技能，包括内置和自定义技能',
+    ),
+    AgentTool(
+      name: 'add_skill',
+      description: '添加一个自定义写作技能',
+      parameters: {
+        'name': '技能名称',
+        'category': '分类（如：剧情技巧/文笔技巧/角色技巧）',
+        'description': '技能描述',
+        'content': '技能详细内容',
+      },
+    ),
   ];
 
   /// 工具执行器映射
