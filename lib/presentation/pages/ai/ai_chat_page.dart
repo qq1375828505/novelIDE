@@ -11,6 +11,8 @@ import 'package:novel_ide/data/services/user_memory.dart';
 import 'package:novel_ide/data/services/workspace_agent.dart';
 import 'package:novel_ide/data/services/agent_tool_executors.dart';
 import 'package:novel_ide/data/services/workflow_engine.dart';
+import 'package:novel_ide/data/services/voice_service.dart';
+import 'package:novel_ide/presentation/pages/ai/voice_call_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 
 /// AI chat session model.
@@ -44,6 +46,22 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
   AiChatSession? _currentSession;
   bool _isLoading = false;
   bool _showHistory = false;
+
+  // 语音相关
+  final VoiceService _voiceService = VoiceService();
+  bool _isVoiceListening = false;
+  bool _voiceInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initVoice();
+  }
+
+  Future<void> _initVoice() async {
+    _voiceInitialized = await _voiceService.init();
+    if (mounted) setState(() {});
+  }
 
   void _newSession() {
     final session = AiChatSession(
@@ -199,6 +217,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
   void dispose() {
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
+    _voiceService.dispose();
     super.dispose();
   }
 
@@ -474,6 +493,23 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                   icon: const Icon(Icons.send, color: Colors.white, size: 18),
                   onPressed: _isLoading ? null : _sendMessage,
                 ),
+              ),
+              const SizedBox(width: 4),
+              // 麦克风按钮（语音转文字）
+              IconButton(
+                icon: Icon(
+                  _isVoiceListening ? Icons.mic : Icons.mic_none,
+                  color: _isVoiceListening ? Colors.red : Colors.grey[600],
+                  size: 24,
+                ),
+                onPressed: _voiceInitialized ? _toggleVoiceInput : null,
+                tooltip: '语音输入',
+              ),
+              // 通话按钮（实时语音通话）
+              IconButton(
+                icon: Icon(Icons.phone_in_talk, color: Colors.grey[600], size: 24),
+                onPressed: _openVoiceCall,
+                tooltip: '语音通话',
               ),
             ],
           ),
@@ -756,6 +792,56 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         _isLoading = false;
       });
     }
+  }
+
+  /// 语音输入切换
+  void _toggleVoiceInput() async {
+    if (_isVoiceListening) {
+      await _voiceService.stopListening();
+      setState(() => _isVoiceListening = false);
+    } else {
+      setState(() => _isVoiceListening = true);
+      _voiceService.onResult = (text) {
+        setState(() => _inputCtrl.text = text);
+      };
+      _voiceService.onListeningEnd = () {
+        setState(() => _isVoiceListening = false);
+      };
+      await _voiceService.startListening();
+    }
+  }
+
+  /// 打开语音通话
+  void _openVoiceCall() async {
+    final config = ref.read(selectedAiConfigProvider);
+    if (config == null) {
+      TopNotification.error(context, '请先在"我的"页面配置AI模型');
+      return;
+    }
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VoiceCallPage(
+          onCallEnd: (transcript, aiResponse) {
+            // 通话结束后，将记录发到聊天
+            if (_currentSession == null) _newSession();
+            if (transcript.isNotEmpty) {
+              setState(() {
+                _currentSession!.messages.add({'role': 'user', 'content': '🎤 语音通话记录：\n$transcript'});
+              });
+            }
+            if (aiResponse.isNotEmpty) {
+              setState(() {
+                _currentSession!.messages.add({'role': 'assistant', 'content': '🤖 AI回复：\n$aiResponse'});
+              });
+            }
+          },
+        ),
+      ),
+    );
+
+    _scrollToBottom();
   }
 
   /// 选择文件
