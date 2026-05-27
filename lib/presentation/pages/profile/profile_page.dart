@@ -13,6 +13,7 @@ import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
 import 'package:novel_ide/data/services/model_test_service.dart';
 import 'package:novel_ide/presentation/pages/profile/app_config_page.dart';
 import 'package:novel_ide/presentation/pages/profile/user_memory_page.dart';
+import 'package:novel_ide/presentation/widgets/top_snackbar.dart';
 
 /// 根据 URL 自动识别 API 协议类型
 /// - URL 包含 anthropic / claude → Anthropic 协议
@@ -122,11 +123,11 @@ void _showEditAiConfigDialog(BuildContext context, WidgetRef ref, AiConfig confi
                 );
                 final result = await ModelTestService().testConnection(testConfig);
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
+                  showTopSnackBar(context, result, isError: false);
                 }
               } catch (e) {
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.red));
+                  showTopSnackBar(context, '$e', isError: true);
                 }
               }
               setDialogState(() => isTesting = false);
@@ -575,16 +576,12 @@ class ProfilePage extends ConsumerWidget {
                         final result = await ModelTestService().testConnection(tempConfig);
                         setDialogState(() => isTesting = false);
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(result), backgroundColor: Colors.green),
-                          );
+                          showTopSnackBar(context, result, isError: false);
                         }
                       } catch (e) {
                         setDialogState(() => isTesting = false);
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('$e'), backgroundColor: Colors.red),
-                          );
+                          showTopSnackBar(context, '$e', isError: true);
                         }
                       }
                     },
