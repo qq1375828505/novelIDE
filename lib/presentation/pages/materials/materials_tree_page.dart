@@ -4,6 +4,7 @@ import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/material_models.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/repositories/material_repository.dart';
+import 'package:novel_ide/data/services/novel_memory.dart';
 import 'package:uuid/uuid.dart';
 import 'package:novel_ide/presentation/widgets/file_tree_view.dart';
 import 'package:novel_ide/presentation/pages/works/export_page.dart';
@@ -19,6 +20,28 @@ class MaterialsTreePage extends ConsumerStatefulWidget {
 class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
   // 树节点展开状态
   final Set<String> _expandedNodes = {'角色', '设定', '地点', '势力', '道具', '伏笔', '参考', '记忆'};
+  // 记忆包内容
+  String _memoryContent = '';
+  bool _isLoadingMemory = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMemory();
+  }
+
+  Future<void> _loadMemory() async {
+    final selectedNovel = ref.read(selectedNovelProvider);
+    if (selectedNovel == null) return;
+    final memory = NovelMemory(novelId: selectedNovel.id, novelTitle: selectedNovel.title);
+    final content = await memory.autoUpdate();
+    if (mounted) {
+      setState(() {
+        _memoryContent = content;
+        _isLoadingMemory = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +69,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
       items: items,
       hooks: hooks,
       references: references,
+      memoryContent: _memoryContent,
     );
 
     return Scaffold(
@@ -119,6 +143,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     required List<Item> items,
     required List<PlotHook> hooks,
     required List<ReferenceMaterial> references,
+    required String memoryContent,
   }) {
     return [
       FileTreeNode(
@@ -204,6 +229,21 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
           content: _formatReferenceContent(r),
           fileType: 'md',
         )).toList(),
+      ),
+      // 记忆包
+      FileTreeNode(
+        id: 'folder_memory',
+        name: '记忆包',
+        isFolder: true,
+        isExpanded: _expandedNodes.contains('记忆'),
+        children: [
+          FileTreeNode(
+            id: 'memory_file',
+            name: '小说记忆.md',
+            content: memoryContent,
+            fileType: 'md',
+          ),
+        ],
       ),
     ];
   }
