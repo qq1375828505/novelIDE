@@ -8,6 +8,8 @@ import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
 import 'package:novel_ide/data/services/user_memory.dart';
+import 'package:novel_ide/data/services/workspace_agent.dart';
+import 'package:novel_ide/data/services/agent_tool_executors.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 
 /// AI chat session model.
@@ -63,9 +65,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
     final config = ref.read(selectedAiConfigProvider);
     if (config == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请先在"我的"页面配置AI模型')),
-      );
+      TopNotification.error(context, '请先在"我的"页面配置AI模型');
       return;
     }
 
@@ -104,18 +104,52 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         await _compactMessages(config);
       }
 
-      final aiService = ref.read(aiServiceProvider);
-      final aiText = await aiService.send(
-        config: config,
-        systemPrompt: '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext',
-        userMessage: text,
-        taskType: 'chat',
-      );
+      // Check if we have a novel selected for Agent mode
+      final novel = ref.read(selectedNovelProvider);
+      if (novel != null) {
+        // Agent mode with tools
+        final agent = WorkspaceAgent();
+        registerAllToolExecutors(agent: agent, novelId: novel.id, novelTitle: novel.title);
 
-      setState(() {
-        _currentSession!.messages.add({'role': 'assistant', 'content': aiText});
-        _isLoading = false;
-      });
+        final effectiveSystemPrompt = '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext';
+
+        final response = await agent.chat(
+          config: config,
+          messages: _currentSession!.messages,
+          systemPrompt: effectiveSystemPrompt,
+        );
+
+        // Build response with tool call info
+        final buffer = StringBuffer();
+        if (response.toolResults.isNotEmpty) {
+          buffer.writeln('🔧 **工具调用：**\n');
+          for (final result in response.toolResults) {
+            final icon = result.success ? '✅' : '❌';
+            buffer.writeln('$icon ${result.toolName}：${result.message}');
+          }
+          buffer.writeln('\n---\n');
+        }
+        buffer.write(response.content);
+
+        setState(() {
+          _currentSession!.messages.add({'role': 'assistant', 'content': buffer.toString()});
+          _isLoading = false;
+        });
+      } else {
+        // Normal mode without tools
+        final aiService = ref.read(aiServiceProvider);
+        final aiText = await aiService.send(
+          config: config,
+          systemPrompt: '$systemPrompt\n\n$userMemoryContext',
+          userMessage: text,
+          taskType: 'chat',
+        );
+
+        setState(() {
+          _currentSession!.messages.add({'role': 'assistant', 'content': aiText});
+          _isLoading = false;
+        });
+      }
       _scrollToBottom();
     } catch (e) {
       setState(() {
