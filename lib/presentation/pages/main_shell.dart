@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/presentation/pages/works/works_page.dart';
 import 'package:novel_ide/presentation/pages/outline/outline_page.dart';
-import 'package:novel_ide/presentation/pages/materials/materials_page.dart';
+import 'package:novel_ide/presentation/pages/materials/materials_tree_page.dart';
 import 'package:novel_ide/presentation/pages/ai/ai_chat_page.dart';
 
 class MainShell extends ConsumerWidget {
@@ -16,7 +16,7 @@ class MainShell extends ConsumerWidget {
     final pages = [
       const WorksPage(),
       const OutlinePage(),
-      const MaterialsPage(),
+      const MaterialsTreePage(),
       const AiChatPage(),
     ];
 
