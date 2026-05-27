@@ -587,7 +587,7 @@ class _ExportPageState extends State<ExportPage> {
                     Expanded(
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.save_alt, size: 20),
-                        label: const Text('保存到本地'),
+                        label: const Text('打包'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
