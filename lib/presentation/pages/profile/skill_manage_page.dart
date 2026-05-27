@@ -217,22 +217,7 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Text(skill.name),
-            if (skill.isBuiltIn)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text('内置', style: TextStyle(fontSize: 10, color: Colors.orange)),
-              ),
-          ],
-        ),
-        subtitle: Text('${skill.category} · ${skill.isEnabled ? "已启用" : "已禁用"}'),
+        title: Text('${skill.name}  ${skill.category} · ${skill.isEnabled ? "已启用" : "已禁用"}'),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
