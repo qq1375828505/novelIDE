@@ -118,7 +118,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     required List<Faction> factions,
     required List<Item> items,
     required List<PlotHook> hooks,
-    required List<Reference> references,
+    required List<ReferenceMaterial> references,
   }) {
     return [
       FileTreeNode(
@@ -267,7 +267,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     return buffer.toString();
   }
 
-  String _formatReferenceContent(Reference r) {
+  String _formatReferenceContent(ReferenceMaterial r) {
     final buffer = StringBuffer();
     buffer.writeln('# ${r.title}');
     if (r.content != null) buffer.writeln('\n${r.content}');
@@ -529,7 +529,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
           FilledButton(
             onPressed: () {
               if (titleCtrl.text.trim().isEmpty) return;
-              final ref = Reference(
+              final ref = ReferenceMaterial(
                 id: const Uuid().v4(),
                 novelId: novelId,
                 title: titleCtrl.text.trim(),
