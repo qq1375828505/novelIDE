@@ -490,6 +490,97 @@ class ProfilePage extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 快速配置入口
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.auto_awesome, size: 16, color: Colors.blue[700]),
+                          const SizedBox(width: 6),
+                          Text('快速配置', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue[700])),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          // 智谱AI GLM-4-Flash
+                          ActionChip(
+                            avatar: const Icon(Icons.flash_on, size: 16),
+                            label: const Text('智谱AI GLM-4-Flash'),
+                            backgroundColor: Colors.green[50],
+                            onPressed: () {
+                              nameCtrl.text = '智谱AI GLM-4-Flash';
+                              urlCtrl.text = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+                              modelCtrl.text = 'glm-4-flash';
+                              selectedProtocol = ApiProtocol.openaiCompatible;
+                              setDialogState(() {});
+                              // 显示注册引导
+                              showDialog(
+                                context: ctx,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('智谱AI 注册引导'),
+                                  content: const Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('GLM-4-Flash 完全免费！', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                                      SizedBox(height: 12),
+                                      Text('1. 访问 open.bigmodel.cn'),
+                                      Text('2. 用手机号注册账号'),
+                                      Text('3. 进入"API Keys"页面'),
+                                      Text('4. 创建并复制 API Key'),
+                                      Text('5. 粘贴到下方 API Key 输入框'),
+                                      SizedBox(height: 12),
+                                      Text('新用户有免费额度，GLM-4-Flash永久免费！', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('知道了')),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          // DeepSeek
+                          ActionChip(
+                            avatar: const Icon(Icons.water, size: 16),
+                            label: const Text('DeepSeek'),
+                            onPressed: () {
+                              nameCtrl.text = 'DeepSeek';
+                              urlCtrl.text = 'https://api.deepseek.com/chat/completions';
+                              modelCtrl.text = 'deepseek-chat';
+                              selectedProtocol = ApiProtocol.openaiCompatible;
+                              setDialogState(() {});
+                            },
+                          ),
+                          // 硅基流动
+                          ActionChip(
+                            avatar: const Icon(Icons.memory, size: 16),
+                            label: const Text('硅基流动'),
+                            onPressed: () {
+                              nameCtrl.text = '硅基流动';
+                              urlCtrl.text = 'https://api.siliconflow.cn/v1/chat/completions';
+                              modelCtrl.text = 'deepseek-ai/DeepSeek-V2.5';
+                              selectedProtocol = ApiProtocol.openaiCompatible;
+                              setDialogState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 // Protocol selector
                 const Text('API 协议', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
