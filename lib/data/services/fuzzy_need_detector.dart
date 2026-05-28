@@ -237,6 +237,8 @@ class FuzzyNeedDetector {
     switch (type) {
       case ProactiveQuestionType.novelGenre:
         return '小说类型选择 - 帮用户明确想写什么类型的小说';
+      case ProactiveQuestionType.writingStyle:
+        return '写作风格选择 - 帮用户选择写作风格和语气';
       case ProactiveQuestionType.agentSelection:
         return '智能体选择 - 帮用户选择合适的AI工具/智能体';
       case ProactiveQuestionType.skillSelection:
@@ -257,6 +259,8 @@ class FuzzyNeedDetector {
     switch (type) {
       case ProactiveQuestionType.novelGenre:
         return _generateGenreQuestion(userMemory);
+      case ProactiveQuestionType.writingStyle:
+        return null;
       case ProactiveQuestionType.agentSelection:
         return ProactiveQuestion.agentSelectionQuestion;
       case ProactiveQuestionType.skillSelection:
