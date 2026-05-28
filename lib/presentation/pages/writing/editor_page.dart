@@ -45,12 +45,15 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   final TextEditingController _findCtrl = TextEditingController();
   int _findIndex = 0;
   List<TextSelection> _findResults = [];
+  Chapter? _currentChapter;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController();
     _loadChapter();
+    _loadChapterList();
+    _loadTodayWords();
     _initSpeech();
   }
 
@@ -83,9 +86,52 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     await _speech.initialize();
   }
 
+  // --- Chapter Navigation ---
+  List<Chapter> _allChapters = [];
+  int _currentChapterIndex = 0;
+  int todayWords = 0;
+  int goal = 3000;
+
+  Future<void> _loadChapterList() async {
+    final chapters = await ref.read(chapterRepoProvider).getChaptersByNovel(widget.novelId);
+    _allChapters = chapters;
+    _currentChapterIndex = _allChapters.indexWhere((c) => c.id == widget.chapterId);
+    if (_currentChapterIndex < 0) _currentChapterIndex = 0;
+  }
+
+  void _prevChapter() {
+    if (_currentChapterIndex <= 0) return;
+    _saveChapter();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditorPage(novelId: widget.novelId, chapterId: _allChapters[_currentChapterIndex - 1].id),
+      ),
+    );
+  }
+
+  void _nextChapter() {
+    if (_currentChapterIndex >= _allChapters.length - 1) return;
+    _saveChapter();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditorPage(novelId: widget.novelId, chapterId: _allChapters[_currentChapterIndex + 1].id),
+      ),
+    );
+  }
+
+  Future<void> _loadTodayWords() async {
+    try {
+      todayWords = await ref.read(statsRepoProvider).getTodayWords();
+      goal = ref.read(wordGoalProvider);
+    } catch (_) {}
+  }
+
   Future<void> _loadChapter() async {
     final chapter = await ref.read(chapterRepoProvider).getChapter(widget.chapterId);
     if (chapter != null) {
+      _currentChapter = chapter;
       _controller.text = chapter.content;
       _lastSavedWordCount = chapter.wordCount;
       ref.read(editorContentProvider.notifier).state = chapter.content;
@@ -456,10 +502,36 @@ class _EditorPageState extends ConsumerState<EditorPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('编辑器', style: TextStyle(fontSize: 16)),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: _currentChapterIndex > 0 ? _prevChapter : null,
+                  tooltip: '上一章',
+                ),
+                Expanded(
+                  child: Text(
+                    _currentChapter?.title ?? '编辑器',
+                    style: const TextStyle(fontSize: 15),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: _currentChapterIndex < _allChapters.length - 1 ? _nextChapter : null,
+                  tooltip: '下一章',
+                ),
+              ],
+            ),
             Text(
-              '$wordCount字 · $saveStatus${!isOnline ? " · 离线" : ""}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              '$wordCount字 · 今日$todayWords/$goal字 · $saveStatus${!isOnline ? " · 离线" : ""}',
+              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -642,13 +714,6 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         isActive: _showAiDrawer,
                         onPressed: () => setState(() => _showAiDrawer = !_showAiDrawer),
                       ),
-                    _ToolbarButton(
-                      icon: _isListening ? Icons.mic : Icons.mic_none,
-                      label: '语音',
-                      color: _isListening ? Colors.red : null,
-                      isActive: _isListening,
-                      onPressed: _toggleSpeech,
-                    ),
                     _ToolbarButton(
                       icon: Icons.text_snippet,
                       label: '快词',
