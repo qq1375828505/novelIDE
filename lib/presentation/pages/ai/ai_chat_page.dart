@@ -5,6 +5,7 @@ import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/data/models/tomato_agent_model.dart';
 import 'package:novel_ide/data/models/ai_chat_session_model.dart';
+import 'package:novel_ide/data/models/proactive_question_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
@@ -14,11 +15,13 @@ import 'package:novel_ide/data/services/agent_tool_executors.dart';
 import 'package:novel_ide/data/services/workflow_engine.dart';
 import 'package:novel_ide/data/services/voice_service.dart';
 import 'package:novel_ide/data/services/skill_matcher.dart';
+import 'package:novel_ide/data/services/fuzzy_need_detector.dart';
 import 'package:novel_ide/data/models/writing_skill_model.dart';
 import 'package:novel_ide/data/repositories/chat_history_repository.dart';
 import 'package:novel_ide/presentation/pages/ai/voice_call_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/presentation/widgets/skill_indicator.dart';
+import 'package:novel_ide/presentation/widgets/proactive_question_dialog.dart';
 
 /// AI chat session model.
 class AiChatSession {
@@ -155,8 +158,51 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
       return;
     }
 
+    // === 主动式交互：模糊需求检测 ===
+    final detector = FuzzyNeedDetector();
+    final fuzzyType = detector.detect(text);
+    
+    if (fuzzyType != null) {
+      // 获取用户记忆和可用技能
+      String? userMemory;
+      List<WritingSkill>? skills;
+      try {
+        userMemory = await UserMemory.load();
+        final skillRepo = ref.read(skillRepoProvider);
+        skills = await skillRepo.getAllSkills();
+      } catch (_) {}
+
+      // 生成个性化问题
+      final question = await detector.generateQuestion(
+        text,
+        fuzzyType,
+        userMemory: userMemory,
+        availableSkills: skills,
+      );
+
+      if (question != null && mounted) {
+        // 显示主动提问弹窗
+        ProactiveSelection? selection;
+        await ProactiveQuestionDialog.show(
+          context,
+          question: question,
+          onSelected: (s) => selection = s,
+          onSkipped: () => selection = null,
+        );
+
+        // 如果用户选择了选项，将选择结果附加到消息
+        if (selection != null) {
+          _inputCtrl.text = '$text\n\n[用户选择：${selection!.toAiContext()}]';
+        }
+      }
+    }
+
+    // 检查是否需要触发 Workspace Agent
+    final shouldTriggerAgent = detector.shouldTriggerWorkspaceAgent(text);
+    final intent = detector.extractIntent(text);
+
     setState(() {
-      _currentSession!.messages.add({'role': 'user', 'content': text});
+      _currentSession!.messages.add({'role': 'user', 'content': _inputCtrl.text.trim()});
       // Update title from first message
       if (_currentSession!.messages.length == 1) {
         _currentSession!.title = text.length > 20 ? '${text.substring(0, 20)}...' : text;
