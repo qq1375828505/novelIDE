@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/services/novel_import_service.dart';
+import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/data/services/ai_analysis_service.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 
@@ -28,9 +29,11 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
   String? _fileName;
   bool _isImporting = false;
   bool _isAnalyzing = false;
+  bool _isPreviewing = false;
   String _statusText = '';
   double _progress = 0;
   ImportResult? _importResult;
+  ImportPreview? _importPreview;
   AnalysisResult? _analysisResult;
 
   @override
@@ -228,10 +231,34 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
       return;
     }
 
+    // Step 1: 预览分析
+    setState(() {
+      _isPreviewing = true;
+      _statusText = '正在分析文件结构...';
+    });
+
+    try {
+      final service = NovelImportService();
+      final preview = await service.previewImport(_filePath!);
+      setState(() {
+        _importPreview = preview;
+        _isPreviewing = false;
+        _statusText = '识别结果：${preview.detectedType}（来源：${preview.matchSource}）
+${preview.chapters.length} 段内容，${preview.totalWords} 字';
+      });
+    } catch (e) {
+      setState(() {
+        _isPreviewing = false;
+        _statusText = '文件分析失败：$e';
+      });
+      return;
+    }
+
+    // Step 2: 确认后导入
     setState(() {
       _isImporting = true;
       _progress = 0;
-      _statusText = '正在读取文件并拆分章节...';
+      _statusText = '正在导入...';
     });
 
     final service = NovelImportService();
