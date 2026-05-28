@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+import 'package:archive/archive.dart';
 
 class LocalFileDataSource {
   static final _uuid = Uuid();
@@ -101,6 +102,48 @@ class LocalFileDataSource {
   Future<void> deleteProjectDir(String projectPath) async {
     final dir = Directory(projectPath);
     if (await dir.exists()) await dir.delete(recursive: true);
+  }
+
+  /// 导出作品为 .novelpack 压缩包
+  Future<void> exportNovelPack(String projectPath, String exportPath) async {
+    final archive = Archive();
+    final projectDir = Directory(projectPath);
+    await _addDirectoryToArchive(projectDir, projectDir.path, archive);
+    final zipData = ZipEncoder().encode(archive);
+    await File(exportPath).writeAsBytes(zipData);
+  }
+
+  /// 递归将目录添加到 Archive
+  Future<void> _addDirectoryToArchive(Directory dir, String rootPath, Archive archive) async {
+    final entities = dir.listSync();
+    for (final entity in entities) {
+      final relativePath = p.relative(entity.path, from: rootPath);
+      if (entity is File) {
+        final bytes = await entity.readAsBytes();
+        archive.addFile(ArchiveFile(relativePath, bytes.length, bytes));
+      } else if (entity is Directory) {
+        await _addDirectoryToArchive(entity, rootPath, archive);
+      }
+    }
+  }
+
+  /// 导入 .novelpack 压缩包，返回解压目录路径
+  Future<String> importNovelPack(String packPath) async {
+    final bytes = await File(packPath).readAsBytes();
+    final archive = ZipDecoder().decodeBytes(bytes);
+    final dir = await _worksDir;
+    final novelId = _uuid.v4();
+    final extractDir = Directory(p.join(dir.path, novelId));
+    await extractDir.create(recursive: true);
+
+    for (final file in archive) {
+      if (file.isFile) {
+        final outFile = File(p.join(extractDir.path, file.name));
+        await outFile.create(recursive: true);
+        await outFile.writeAsBytes(file.content as List<int>);
+      }
+    }
+    return extractDir.path;
   }
 
   // ===== 资料区操作 =====

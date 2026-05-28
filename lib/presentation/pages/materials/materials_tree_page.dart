@@ -9,7 +9,7 @@ import 'package:novel_ide/data/services/novel_memory.dart';
 import 'package:novel_ide/data/services/outline_generator_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:novel_ide/presentation/widgets/file_tree_view.dart';
-import 'package:novel_ide/presentation/pages/works/export_page.dart';
+import 'package:novel_ide/presentation/pages/works/export_page.dart' hide FileTreeNode;
 
 /// 新版资料库页面 - 层级文件树展示
 class MaterialsTreePage extends ConsumerStatefulWidget {
