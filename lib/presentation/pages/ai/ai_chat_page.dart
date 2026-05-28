@@ -12,8 +12,11 @@ import 'package:novel_ide/data/services/workspace_agent.dart';
 import 'package:novel_ide/data/services/agent_tool_executors.dart';
 import 'package:novel_ide/data/services/workflow_engine.dart';
 import 'package:novel_ide/data/services/voice_service.dart';
+import 'package:novel_ide/data/services/skill_matcher.dart';
+import 'package:novel_ide/data/models/writing_skill_model.dart';
 import 'package:novel_ide/presentation/pages/ai/voice_call_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
+import 'package:novel_ide/presentation/widgets/skill_indicator.dart';
 
 /// AI chat session model.
 class AiChatSession {
@@ -51,6 +54,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
   final VoiceService _voiceService = VoiceService();
   bool _isVoiceListening = false;
   bool _voiceInitialized = false;
+
+  // 技能匹配记录：assistant消息索引 → 匹配到的技能列表
+  final Map<int, List<WritingSkill>> _skillMatches = {};
 
   @override
   void initState() {
@@ -101,7 +107,19 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
     try {
       final preset = ref.read(currentPresetProvider);
-      final systemPrompt = preset?.systemPrompt ?? '你是一位专业的网文写作助手，擅长帮助作者构思剧情、润色文字、生成大纲和角色设定。请用中文回复。';
+      var systemPrompt = preset?.systemPrompt ?? '你是一位专业的网文写作助手，擅长帮助作者构思剧情、润色文字、生成大纲和角色设定。请用中文回复。';
+
+      // 技能自动匹配
+      List<WritingSkill> matchedSkills = [];
+      try {
+        final skillRepo = ref.read(skillRepoProvider);
+        final allSkills = await skillRepo.getAllSkills();
+        final enabled = allSkills.where((s) => s.isEnabled).toList();
+        matchedSkills = SkillMatcher.match(text, enabled);
+        if (matchedSkills.isNotEmpty) {
+          systemPrompt = SkillMatcher.injectSkillContext(systemPrompt, matchedSkills);
+        }
+      } catch (_) {}
 
       // Load novel memory for context
       String memoryContext = '';
@@ -152,6 +170,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
         setState(() {
           _currentSession!.messages.add({'role': 'assistant', 'content': buffer.toString()});
+          if (matchedSkills.isNotEmpty) {
+            _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
+          }
           _isLoading = false;
         });
       } else {
@@ -166,6 +187,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
         setState(() {
           _currentSession!.messages.add({'role': 'assistant', 'content': aiText});
+          if (matchedSkills.isNotEmpty) {
+            _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
+          }
           _isLoading = false;
         });
       }
@@ -431,19 +455,30 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                     }
                     final msg = messages[index];
                     final isUser = msg['role'] == 'user';
-                    return Align(
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isUser ? AppColors.primary : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(16),
+                    final matchedForThis = _skillMatches[index];
+                    return Column(
+                      crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        if (matchedForThis != null && matchedForThis.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4, left: 4),
+                            child: SkillIndicator(matchedSkills: matchedForThis),
+                          ),
+                        Align(
+                          alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isUser ? AppColors.primary : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(msg['content']!, style: TextStyle(
+                                color: isUser ? Colors.white : Colors.black87, fontSize: 14, height: 1.5)),
+                          ),
                         ),
-                        child: Text(msg['content']!, style: TextStyle(
-                            color: isUser ? Colors.white : Colors.black87, fontSize: 14, height: 1.5)),
-                      ),
+                      ],
                     );
                   },
                 ),

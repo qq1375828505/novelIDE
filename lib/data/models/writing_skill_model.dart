@@ -7,6 +7,7 @@ class WritingSkill {
   String category;
   String description;
   String content; // 技能详细内容/prompt
+  List<String> keywords; // 用于自动匹配的关键词
   bool isEnabled;
   bool isBuiltIn; // 是否为内置技能
   final DateTime createdAt;
@@ -18,6 +19,7 @@ class WritingSkill {
     required this.category,
     required this.description,
     required this.content,
+    this.keywords = const [],
     this.isEnabled = true,
     this.isBuiltIn = false,
     DateTime? createdAt,
@@ -32,6 +34,7 @@ class WritingSkill {
       category: json['category'] as String? ?? '通用',
       description: json['description'] as String? ?? '',
       content: json['content'] as String? ?? '',
+      keywords: (json['keywords'] as List<dynamic>?)?.cast<String>() ?? [],
       isEnabled: json['isEnabled'] as bool? ?? true,
       isBuiltIn: json['isBuiltIn'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String? ?? DateTime.now().toIso8601String()),
@@ -46,6 +49,7 @@ class WritingSkill {
       'category': category,
       'description': description,
       'content': content,
+      'keywords': keywords,
       'isEnabled': isEnabled,
       'isBuiltIn': isBuiltIn,
       'createdAt': createdAt.toIso8601String(),
@@ -61,6 +65,7 @@ class WritingSkill {
       category: '剧情技巧',
       description: '如何设计引人入胜的伏笔，包括埋设时机、回收节奏、多层伏笔嵌套',
       isBuiltIn: true,
+      keywords: ['伏笔', '埋线', '回收', '悬念', '草蛇灰线', '铺垫'],
       content: '''【伏笔设计技巧】
 
 1. 埋设原则：
@@ -89,6 +94,7 @@ class WritingSkill {
       category: '结构技巧',
       description: '网文节奏控制方法，包括张弛有度、高潮设置、低谷过渡',
       isBuiltIn: true,
+      keywords: ['节奏', '高潮', '拖沓', '紧凑', '水章', '爽点', '张弛'],
       content: '''【节奏把控技巧】
 
 1. 基本节奏模式：
@@ -117,6 +123,7 @@ class WritingSkill {
       category: '文笔技巧',
       description: '写出有个性、推动剧情的对话，避免千篇一律',
       isBuiltIn: true,
+      keywords: ['对话', '台词', '说话', '口癖', '语气', '对白'],
       content: '''【对话写作技巧】
 
 1. 角色个性化：
@@ -145,6 +152,7 @@ class WritingSkill {
       category: '文笔技巧',
       description: '写出有画面感的场景描写，调动读者五感',
       isBuiltIn: true,
+      keywords: ['描写', '场景', '环境', '画面', '氛围', '五感'],
       content: '''【场景描写技巧】
 
 1. 五感描写法：
@@ -175,6 +183,7 @@ class WritingSkill {
       category: '剧情技巧',
       description: '制造悬念吸引读者持续阅读，包括章末钩子、反转设计',
       isBuiltIn: true,
+      keywords: ['悬念', '反转', '章末', '钩子', '意外', '揭秘'],
       content: '''【悬念设置技巧】
 
 1. 章末钩子类型：
@@ -204,6 +213,7 @@ class WritingSkill {
       category: '角色技巧',
       description: '塑造立体丰满的角色，包括性格、成长弧线、记忆点',
       isBuiltIn: true,
+      keywords: ['角色', '人设', '性格', '成长', '反派', '配角', '主角'],
       content: '''【角色塑造技巧】
 
 1. 角色立体化：

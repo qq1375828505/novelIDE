@@ -12,6 +12,7 @@ import 'package:novel_ide/data/repositories/chapter_repository.dart';
 import 'package:novel_ide/data/repositories/volume_repository.dart';
 import 'package:novel_ide/data/repositories/material_repository.dart';
 import 'package:novel_ide/data/repositories/stats_repository.dart';
+import 'package:novel_ide/data/repositories/skill_repository.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/datasources/secure_storage_datasource.dart';
 import 'package:novel_ide/data/services/config_service.dart';
@@ -20,6 +21,7 @@ final novelRepoProvider = Provider((ref) => NovelRepository());
 final chapterRepoProvider = Provider((ref) => ChapterRepository());
 final volumeRepoProvider = Provider((ref) => VolumeRepository());
 final materialRepoProvider = Provider((ref) => MaterialRepository());
+final skillRepoProvider = Provider((ref) => SkillRepository());
 
 final novelsProvider = FutureProvider<List<Novel>>((ref) async {
   return await ref.read(novelRepoProvider).getAllNovels();
