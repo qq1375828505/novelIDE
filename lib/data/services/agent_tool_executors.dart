@@ -1,15 +1,127 @@
 import 'dart:convert';
 import 'package:novel_ide/data/models/material_models.dart';
+import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/data/models/writing_skill_model.dart';
 import 'package:novel_ide/data/repositories/material_repository.dart';
 import 'package:novel_ide/data/repositories/chapter_repository.dart';
 import 'package:novel_ide/data/repositories/skill_repository.dart';
+import 'package:novel_ide/data/repositories/novel_repository.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
+import 'package:novel_ide/data/datasources/database_helper.dart';
+import 'package:novel_ide/data/datasources/secure_storage_datasource.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
 import 'package:novel_ide/data/services/workspace_agent.dart';
+import 'package:novel_ide/data/services/config_service.dart';
 import 'package:novel_ide/data/services/workflow_engine.dart';
 import 'package:uuid/uuid.dart';
+
+/// 注册通用工具执行器（不需要小说上下文）
+void registerGeneralToolExecutors({required WorkspaceAgent agent}) {
+  // 配置管理
+  agent.registerExecutor('get_ai_configs', (args) async {
+    try {
+      final db = DatabaseHelper();
+      final maps = await db.getAllAiConfigs();
+      if (maps.isEmpty) return ToolResult(toolName: 'get_ai_configs', success: true, message: '当前没有配置任何AI模型');
+      final storage = SecureStorageDataSource();
+      final buffer = StringBuffer('已配置的AI模型：\n');
+      for (final m in maps) {
+        final apiKey = await storage.readApiKey(m['id'] as String);
+        final config = db.fromDbMap(m, apiKey);
+        final type = config.modelType.name;
+        buffer.writeln('- [${config.id}] ${config.name}（$type）: ${config.modelName}');
+      }
+      return ToolResult(toolName: 'get_ai_configs', success: true, message: buffer.toString());
+    } catch (e) {
+      return ToolResult(toolName: 'get_ai_configs', success: false, message: '获取失败: $e');
+    }
+  });
+
+  agent.registerExecutor('add_ai_config', (args) async {
+    try {
+      final name = args['name'] as String? ?? '';
+      final apiUrl = args['api_url'] as String? ?? '';
+      final modelName = args['model_name'] as String? ?? '';
+      final modelType = args['model_type'] as String? ?? 'text';
+      final apiKey = args['api_key'] as String? ?? '';
+      if (name.isEmpty || apiUrl.isEmpty || modelName.isEmpty) {
+        return ToolResult(toolName: 'add_ai_config', success: false, message: '名称、API地址、模型ID不能为空');
+      }
+      final db = DatabaseHelper();
+      final id = 'cfg_${DateTime.now().millisecondsSinceEpoch}';
+      final config = AiConfig(
+        id: id, name: name, apiUrl: apiUrl, modelName: modelName,
+        modelType: modelType == 'tts' ? ModelType.tts : modelType == 'stt' ? ModelType.stt : ModelType.text,
+      );
+      await db.insertAiConfig(db.toDbMap(config));
+      if (apiKey.isNotEmpty) {
+        await SecureStorageDataSource().writeApiKey(id, apiKey);
+      }
+      return ToolResult(toolName: 'add_ai_config', success: true, message: '已添加AI模型「$name」($modelType)');
+    } catch (e) {
+      return ToolResult(toolName: 'add_ai_config', success: false, message: '添加失败: $e');
+    }
+  });
+
+  agent.registerExecutor('set_active_ai_config', (args) async {
+    try {
+      final configId = args['config_id'] as String? ?? '';
+      final purpose = args['purpose'] as String? ?? 'text';
+      if (configId.isEmpty) return ToolResult(toolName: 'set_active_ai_config', success: false, message: '请提供配置ID');
+      if (purpose == 'voice') {
+        ConfigService.voiceConfigId = configId;
+        return ToolResult(toolName: 'set_active_ai_config', success: true, message: '已设置语音模型');
+      } else {
+        ConfigService.aiConfigId = configId;
+        return ToolResult(toolName: 'set_active_ai_config', success: true, message: '已设置文本对话模型');
+      }
+    } catch (e) {
+      return ToolResult(toolName: 'set_active_ai_config', success: false, message: '设置失败: $e');
+    }
+  });
+
+  // 项目管理
+  agent.registerExecutor('list_novels', (args) async {
+    try {
+      final repo = NovelRepository();
+      final novels = await repo.getAllNovels();
+      if (novels.isEmpty) return ToolResult(toolName: 'list_novels', success: true, message: '当前没有小说项目');
+      final buffer = StringBuffer('小说项目列表：\n');
+      for (final n in novels) {
+        buffer.writeln('- [${n.id}] ${n.title}（${n.category ?? '未分类'}）');
+      }
+      return ToolResult(toolName: 'list_novels', success: true, message: buffer.toString());
+    } catch (e) {
+      return ToolResult(toolName: 'list_novels', success: false, message: '获取失败: $e');
+    }
+  });
+
+  agent.registerExecutor('create_novel', (args) async {
+    try {
+      final title = args['title'] as String? ?? '';
+      final genre = args['genre'] as String? ?? '';
+      final description = args['description'] as String? ?? '';
+      if (title.isEmpty) return ToolResult(toolName: 'create_novel', success: false, message: '标题不能为空');
+      final repo = NovelRepository();
+      final novel = await repo.createNovel(title: title, category: genre, description: description);
+      return ToolResult(toolName: 'create_novel', success: true, message: '已创建小说「$title」(ID: ${novel.id})', data: {'novel_id': novel.id});
+    } catch (e) {
+      return ToolResult(toolName: 'create_novel', success: false, message: '创建失败: $e');
+    }
+  });
+
+  agent.registerExecutor('switch_novel', (args) async {
+    try {
+      final novelId = args['novel_id'] as String? ?? '';
+      if (novelId.isEmpty) return ToolResult(toolName: 'switch_novel', success: false, message: '请提供小说ID');
+      // 注意：切换小说需要通过状态管理，这里只返回提示
+      return ToolResult(toolName: 'switch_novel', success: true, message: '已请求切换到小说 $novelId，请在作品列表中确认');
+    } catch (e) {
+      return ToolResult(toolName: 'switch_novel', success: false, message: '切换失败: $e');
+    }
+  });
+}
 
 /// 注册所有Agent工具执行器
 /// 将工具名连接到实际的数据操作
@@ -314,5 +426,42 @@ void registerAllToolExecutors({
       success: true,
       message: '工作流「${workflow.name}」执行完成：\n\n${results.join('\n')}',
     );
+  });
+
+  // ====== 编辑器操作 ======
+
+  agent.registerExecutor('write_chapter_content', (args) async {
+    try {
+      final chapterId = args['chapter_id'] as String? ?? '';
+      final content = args['content'] as String? ?? '';
+      if (chapterId.isEmpty) return ToolResult(toolName: 'write_chapter_content', success: false, message: '章节ID不能为空');
+      final chapter = await chapterRepo.getChapter(chapterId);
+      if (chapter == null) return ToolResult(toolName: 'write_chapter_content', success: false, message: '未找到章节：$chapterId');
+      final updatedChapter = chapter.copyWith(
+        content: content,
+        wordCount: content.length,
+      );
+      await chapterRepo.updateChapter(updatedChapter);
+      return ToolResult(toolName: 'write_chapter_content', success: true, message: '已写入章节内容（${content.length}字）');
+    } catch (e) {
+      return ToolResult(toolName: 'write_chapter_content', success: false, message: '写入失败: $e');
+    }
+  });
+
+  agent.registerExecutor('create_chapter', (args) async {
+    try {
+      final volumeId = args['volume_id'] as String? ?? '';
+      final title = args['title'] as String? ?? '新章节';
+      final content = args['content'] as String? ?? '';
+      if (volumeId.isEmpty) return ToolResult(toolName: 'create_chapter', success: false, message: '卷ID不能为空');
+      final chapter = await chapterRepo.createChapter(novelId: novelId, volumeId: volumeId, title: title);
+      if (content.isNotEmpty) {
+        final updatedChapter = chapter.copyWith(content: content, wordCount: content.length);
+        await chapterRepo.updateChapter(updatedChapter);
+      }
+      return ToolResult(toolName: 'create_chapter', success: true, message: '已创建章节「$title」(ID: ${chapter.id})', data: {'chapter_id': chapter.id});
+    } catch (e) {
+      return ToolResult(toolName: 'create_chapter', success: false, message: '创建失败: $e');
+    }
   });
 }

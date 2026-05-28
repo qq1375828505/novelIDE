@@ -240,6 +240,72 @@ class WorkspaceAgent {
         'content': 'Skill详细内容',
       },
     ),
+
+    // ====== 系统配置工具 ======
+    AgentTool(
+      name: 'get_ai_configs',
+      description: '获取所有已配置的AI模型列表，包括文本模型和语音模型',
+    ),
+    AgentTool(
+      name: 'add_ai_config',
+      description: '添加一个新的AI模型配置（文本模型或语音模型）',
+      parameters: {
+        'name': '配置名称',
+        'api_url': 'API地址',
+        'model_name': '模型ID',
+        'model_type': '模型类型：text（文本）/ tts（语音合成）/ stt（语音识别）',
+        'api_key': 'API Key',
+      },
+    ),
+    AgentTool(
+      name: 'set_active_ai_config',
+      description: '设置当前使用的AI模型（文本模型或语音模型）',
+      parameters: {
+        'config_id': '配置ID',
+        'purpose': '用途：text（文本对话）/ voice（语音通话）',
+      },
+    ),
+
+    // ====== 项目管理工具 ======
+    AgentTool(
+      name: 'list_novels',
+      description: '获取所有小说项目列表',
+    ),
+    AgentTool(
+      name: 'create_novel',
+      description: '创建一个新的小说项目',
+      parameters: {
+        'title': '小说标题',
+        'genre': '类型（如：玄幻/都市/言情）',
+        'description': '简介描述',
+      },
+    ),
+    AgentTool(
+      name: 'switch_novel',
+      description: '切换当前选中的小说项目',
+      parameters: {
+        'novel_id': '小说ID',
+      },
+    ),
+
+    // ====== 编辑器工具 ======
+    AgentTool(
+      name: 'write_chapter_content',
+      description: '将内容写入指定章节（覆盖原有内容）',
+      parameters: {
+        'chapter_id': '章节ID',
+        'content': '章节正文内容（Markdown格式）',
+      },
+    ),
+    AgentTool(
+      name: 'create_chapter',
+      description: '在指定卷下创建新章节',
+      parameters: {
+        'volume_id': '卷ID',
+        'title': '章节标题',
+        'content': '章节正文内容（可选）',
+      },
+    ),
   ];
 
   /// 工具执行器映射

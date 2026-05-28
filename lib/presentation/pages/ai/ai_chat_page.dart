@@ -261,44 +261,68 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         await _compactMessages(config);
       }
 
-      // 始终使用 Agent 模式（带工具能力），不再依赖是否选中小说
+      // 智能判断是否需要 Agent 模式（带工具能力）
+      // - 有选中小说 → Agent 模式（操作资料库/章节等）
+      // - 检测到任务意图（生成/分析/检查/优化/配置等）→ Agent 模式
+      // - 普通闲聊 → 普通模式（省 token）
       final novel = ref.read(selectedNovelProvider);
-      final agent = WorkspaceAgent();
-      if (novel != null) {
-        // 有选中小说：注册全部工具（含小说相关操作）
-        registerAllToolExecutors(agent: agent, novelId: novel.id, novelTitle: novel.title);
-      }
-      // 没有选中小说时，Agent 仍可使用通用工具（如配置管理等）
+      final needsAgent = novel != null || shouldTriggerAgent;
 
-      final effectiveSystemPrompt = novel != null
-          ? '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext'
-          : '$systemPrompt\n\n$userMemoryContext';
-
-      final response = await agent.chat(
-        config: config,
-        messages: _currentSession!.messages,
-        systemPrompt: effectiveSystemPrompt,
-      );
-
-      // Build response with tool call info
-      final buffer = StringBuffer();
-      if (response.toolResults.isNotEmpty) {
-        buffer.writeln('🔧 **工具调用：**\n');
-        for (final result in response.toolResults) {
-          final icon = result.success ? '✅' : '❌';
-          buffer.writeln('$icon ${result.toolName}：${result.message}');
+      if (needsAgent) {
+        final agent = WorkspaceAgent();
+        if (novel != null) {
+          registerAllToolExecutors(agent: agent, novelId: novel.id, novelTitle: novel.title);
+        } else {
+          // 没选中小说时，注册通用工具执行器（配置管理等）
+          registerGeneralToolExecutors(agent: agent);
         }
-        buffer.writeln('\n---\n');
-      }
-      buffer.write(response.content);
 
-      setState(() {
-        _currentSession!.messages.add({'role': 'assistant', 'content': buffer.toString()});
-        if (matchedSkills.isNotEmpty) {
-          _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
+        final effectiveSystemPrompt = novel != null
+            ? '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext'
+            : '$systemPrompt\n\n$userMemoryContext';
+
+        final response = await agent.chat(
+          config: config,
+          messages: _currentSession!.messages,
+          systemPrompt: effectiveSystemPrompt,
+        );
+
+        final buffer = StringBuffer();
+        if (response.toolResults.isNotEmpty) {
+          buffer.writeln('🔧 **工具调用：**\n');
+          for (final result in response.toolResults) {
+            final icon = result.success ? '✅' : '❌';
+            buffer.writeln('$icon ${result.toolName}：${result.message}');
+          }
+          buffer.writeln('\n---\n');
         }
-        _isLoading = false;
-      });
+        buffer.write(response.content);
+
+        setState(() {
+          _currentSession!.messages.add({'role': 'assistant', 'content': buffer.toString()});
+          if (matchedSkills.isNotEmpty) {
+            _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
+          }
+          _isLoading = false;
+        });
+      } else {
+        // 普通模式：闲聊、简单问答（省 token，不发工具定义）
+        final aiService = ref.read(aiServiceProvider);
+        final aiText = await aiService.send(
+          config: config,
+          systemPrompt: '$systemPrompt\n\n$userMemoryContext',
+          userMessage: text,
+          taskType: 'chat',
+        );
+
+        setState(() {
+          _currentSession!.messages.add({'role': 'assistant', 'content': aiText});
+          if (matchedSkills.isNotEmpty) {
+            _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
+          }
+          _isLoading = false;
+        });
+      }
       _scrollToBottom();
     } catch (e) {
       setState(() {
