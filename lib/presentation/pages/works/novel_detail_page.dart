@@ -696,7 +696,7 @@ class _CharactersTab extends ConsumerWidget {
               child: const Icon(Icons.person, color: AppColors.primary),
             ),
             title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(c.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: Text(c.description ?? "", maxLines: 2, overflow: TextOverflow.ellipsis),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               // TODO: 打开角色编辑页
@@ -758,8 +758,8 @@ class _SettingsTab extends ConsumerWidget {
               backgroundColor: Colors.blue.withOpacity(0.1),
               child: const Icon(Icons.public, color: Colors.blue),
             ),
-            title: Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(s.content, maxLines: 2, overflow: TextOverflow.ellipsis),
+            title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text(s.description ?? "", maxLines: 2, overflow: TextOverflow.ellipsis),
             trailing: const Icon(Icons.chevron_right),
           ),
         );
