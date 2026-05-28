@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/data/models/tomato_agent_model.dart';
+import 'package:novel_ide/data/models/ai_chat_session_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
@@ -14,6 +15,7 @@ import 'package:novel_ide/data/services/workflow_engine.dart';
 import 'package:novel_ide/data/services/voice_service.dart';
 import 'package:novel_ide/data/services/skill_matcher.dart';
 import 'package:novel_ide/data/models/writing_skill_model.dart';
+import 'package:novel_ide/data/repositories/chat_history_repository.dart';
 import 'package:novel_ide/presentation/pages/ai/voice_call_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/presentation/widgets/skill_indicator.dart';
@@ -42,7 +44,7 @@ class AiChatPage extends ConsumerStatefulWidget {
   ConsumerState<AiChatPage> createState() => _AiChatPageState();
 }
 
-class _AiChatPageState extends ConsumerState<AiChatPage> {
+class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObserver {
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
   final List<AiChatSession> _sessions = [];
@@ -58,10 +60,68 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
   // 技能匹配记录：assistant消息索引 → 匹配到的技能列表
   final Map<int, List<WritingSkill>> _skillMatches = {};
 
+  // 历史记录仓库
+  final ChatHistoryRepository _historyRepo = ChatHistoryRepository();
+  bool _isHistoryLoaded = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initVoice();
+    _loadHistory();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      // 切到后台或关闭：保存历史记录
+      _saveHistory();
+    }
+  }
+
+  /// 加载历史会话
+  Future<void> _loadHistory() async {
+    try {
+      final savedSessions = await _historyRepo.loadSessions();
+      if (savedSessions.isNotEmpty && mounted) {
+        setState(() {
+          _sessions.clear();
+          for (final model in savedSessions) {
+            _sessions.add(AiChatSession(
+              id: model.id,
+              title: model.title,
+              messages: model.messages,
+              createdAt: model.createdAt,
+            ));
+          }
+          // 恢复上次活跃的会话（最新的）
+          _currentSession = _sessions.first;
+        });
+      }
+      _isHistoryLoaded = true;
+    } catch (e) {
+      debugPrint('Load history error: $e');
+      _isHistoryLoaded = true;
+    }
+  }
+
+  /// 保存历史会话
+  Future<void> _saveHistory() async {
+    if (!_isHistoryLoaded) return;
+    try {
+      final models = _sessions.map((s) => AiChatSessionModel(
+        id: s.id,
+        title: s.title,
+        messages: s.messages,
+        createdAt: s.createdAt,
+        updatedAt: DateTime.now(),
+      )).toList();
+      await _historyRepo.saveSessions(models);
+    } catch (e) {
+      debugPrint('Save history error: $e');
+    }
   }
 
   Future<void> _initVoice() async {
@@ -240,6 +300,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _saveHistory(); // 关闭前保存
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     _voiceService.dispose();
@@ -374,7 +436,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
           subtitle: Text('$msgCount 条消息 · ${session.createdAt.month}/${session.createdAt.day}'),
           trailing: IconButton(
             icon: const Icon(Icons.delete_outline, size: 18),
-            onPressed: () {
+            onPressed: () async {
+              // 从本地存储删除
+              await _historyRepo.deleteSession(session.id);
               setState(() {
                 _sessions.removeAt(index);
                 if (_currentSession?.id == session.id) {
