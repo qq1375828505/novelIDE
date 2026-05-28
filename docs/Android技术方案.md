@@ -2623,3 +2623,50 @@ EPUB = ZIP 压缩包，包含：
 | `novel_memory.dart` | 缓存添加 5 分钟 TTL，数据变更后自动刷新 |
 | `export_page.dart` | 保留 ZipEncoder + Archive，确保 bytes 参数传递正确 |
 
+---
+
+## 40. V1.5.3 — 功能优化 + 数据分类重构
+
+### 40.1 Agent改名
+
+- "Agent市场" → "Agent"（页面标题、设置页入口统一）
+
+### 40.2 Skill改名 + 导入
+
+- 所有"写作技能"改为"Skill"（页面标题、标签、提示、对话框）
+- Skill管理页AppBar新增导入按钮，支持 `.md/.txt/.json` 导入为Skill
+- JSON格式自动解析字段，纯文本以文件名作为Skill名称
+
+### 40.3 语音模型配置重构
+
+- AiConfig新增 `modelType` 字段（text/tts/stt/multimodal）
+- 语音配置页面改为独立添加TTS语音模型，不再复用文本模型列表
+- 未配置语音模型时，通话按钮灰色不可点，提示"请先配置语音模型"
+- 设置页显示当前语音模型状态（已配置/待添加）
+- 数据库升级到v5，新增 `model_type` 列
+
+### 40.4 数据分类重构
+
+根目录从扁平结构改为平级独立分类：
+
+```
+NovelProjects/
+├── 作品区/          ← 每个作品一个文件夹
+├── 资料区/          ← 按作品分文件夹
+├── Skill/           ← 独立目录
+├── Agent/           ← 独立目录
+├── 记忆包/          ← 独立目录
+```
+
+- 启动时自动迁移旧目录结构（NovelProjects/{id}_{title} → 作品区/，materials/ → 资料区/，memories/ → 记忆包/，skills/ → Skill/）
+- MaterialRepository、SkillRepository、NovelMemory 路径全部更新
+
+### 40.5 导出功能重构
+
+- 从固定勾选模板改为工作树文件夹模式
+- 作品区和资料区分别展示文件树，支持展开/收缩
+- 搜索栏快速定位文件
+- 全选/全不选控制所有可选项
+- 记忆包固定导出，不可取消
+- 所有文件保存为TXT，打包成ZIP
+
