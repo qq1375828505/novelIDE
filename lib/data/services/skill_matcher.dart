@@ -1,9 +1,9 @@
 import 'package:novel_ide/data/models/writing_skill_model.dart';
 
-/// 技能匹配引擎
-/// 根据用户输入文本，自动匹配相关的写作技能
+/// Skill匹配引擎
+/// 根据用户输入文本，自动匹配相关的Skill
 class SkillMatcher {
-  /// 最大同时匹配的技能数量
+  /// 最大同时匹配的Skill数量
   static const int maxMatchCount = 3;
 
   /// 匹配用户消息中的关键词，返回命中的技能列表
@@ -36,7 +36,7 @@ class SkillMatcher {
 
     final buffer = StringBuffer();
     buffer.writeln(systemPrompt);
-    buffer.writeln('\n【已启动技能参考】');
+    buffer.writeln('\n【已启动Skill参考】');
     for (final skill in matchedSkills) {
       buffer.writeln('\n## ${skill.name}（${skill.category}）');
       buffer.writeln(skill.content);

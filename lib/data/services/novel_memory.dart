@@ -18,7 +18,7 @@ class NovelMemory {
   /// Get the path to the memory file for this novel.
   Future<String> get _memoryPath async {
     final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects', 'memories'));
+    final dir = Directory(p.join(docs.path, 'NovelProjects', '记忆包'));
     if (!await dir.exists()) await dir.create(recursive: true);
     return p.join(dir.path, '${novelId}_memory.txt');
   }

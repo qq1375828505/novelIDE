@@ -499,17 +499,27 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                 color: AppColors.primary,
                 onPressed: () => _showAttachMenu(context),
               ),
-              // 通话按钮（实时语音通话）
-              IconButton(
-                icon: Icon(Icons.phone_in_talk, color: Colors.grey[600], size: 24),
-                onPressed: _openVoiceCall,
-                tooltip: '语音通话',
+              // 通话按钮（实时语音通话）- 仅在配置了语音模型时可用
+              Builder(
+                builder: (context) {
+                  final voiceConfig = ref.watch(selectedVoiceConfigProvider);
+                  final hasVoiceModel = voiceConfig != null;
+                  return IconButton(
+                    icon: Icon(
+                      Icons.phone_in_talk,
+                      color: hasVoiceModel ? Colors.grey[600] : Colors.grey[300],
+                      size: 24,
+                    ),
+                    onPressed: hasVoiceModel ? _openVoiceCall : null,
+                    tooltip: hasVoiceModel ? '语音通话' : '请先配置语音模型',
+                  );
+                },
               ),
-              // ⚡ 技能按钮
+              // ⚡ Skill按钮
               IconButton(
                 icon: const Icon(Icons.auto_awesome, size: 24),
                 color: AppColors.tomatoOrange,
-                tooltip: '调用技能',
+                tooltip: '调用Skill',
                 onPressed: _showAgentSelector,
               ),
               Expanded(
@@ -597,8 +607,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                   ),
                   child: const Icon(Icons.auto_awesome, color: AppColors.secondary),
                 ),
-                title: const Text('技能', style: TextStyle(fontSize: 16)),
-                subtitle: const Text('AI 写作技能和预设', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                title: const Text('Skill', style: TextStyle(fontSize: 16)),
+                subtitle: const Text('AI 写作技巧和预设', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showAgentSelector();
@@ -639,7 +649,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                 children: [
                   Icon(Icons.auto_awesome, size: 20, color: AppColors.tomatoOrange),
                   SizedBox(width: 8),
-                  Text('调用技能', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('调用Skill', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   SizedBox(width: 8),
                   Text('选择Agent执行专项任务', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
@@ -838,9 +848,14 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
   /// 打开语音通话
   void _openVoiceCall() async {
+    final voiceConfig = ref.read(selectedVoiceConfigProvider);
+    if (voiceConfig == null) {
+      TopNotification.error(context, '请先在设置中配置语音模型');
+      return;
+    }
     final config = ref.read(selectedAiConfigProvider);
     if (config == null) {
-      TopNotification.error(context, '请先在"我的"页面配置AI模型');
+      TopNotification.error(context, '请先配置文本AI模型');
       return;
     }
 

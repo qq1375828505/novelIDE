@@ -256,7 +256,7 @@ void registerAllToolExecutors({
 
   agent.registerExecutor('get_skills', (args) async {
     final context = await skillRepo.getEnabledSkillsContext();
-    return ToolResult(toolName: 'get_skills', success: true, message: context.isEmpty ? '没有启用的写作技能' : context);
+    return ToolResult(toolName: 'get_skills', success: true, message: context.isEmpty ? '没有启用的Skill' : context);
   });
 
   agent.registerExecutor('add_skill', (args) async {
@@ -264,10 +264,10 @@ void registerAllToolExecutors({
     final category = args['category'] as String? ?? '通用';
     final description = args['description'] as String? ?? '';
     final content = args['content'] as String? ?? '';
-    if (name.isEmpty) return ToolResult(toolName: 'add_skill', success: false, message: '技能名称不能为空');
+    if (name.isEmpty) return ToolResult(toolName: 'add_skill', success: false, message: 'Skill名称不能为空');
     final skill = skillRepo.createSkill(name: name, category: category, description: description, content: content);
     await skillRepo.addSkill(skill);
-    return ToolResult(toolName: 'add_skill', success: true, message: '已添加技能：$name');
+    return ToolResult(toolName: 'add_skill', success: true, message: '已添加Skill：$name');
   });
 
   // ====== 子代理和工作流 ======

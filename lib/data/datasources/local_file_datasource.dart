@@ -2,33 +2,71 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:archive/archive.dart';
-import 'package:archive/archive_io.dart';
 import 'package:uuid/uuid.dart';
 
 class LocalFileDataSource {
   static final _uuid = Uuid();
 
-  Future<Directory> get _projectsDir async {
+  /// 根目录：documents/NovelProjects/
+  Future<Directory> get _rootDir async {
     final docs = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(docs.path, 'NovelProjects'));
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
 
+  /// 作品区目录
+  Future<Directory> get _worksDir async {
+    final root = await _rootDir;
+    final dir = Directory(p.join(root.path, '作品区'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// 资料区目录
+  Future<Directory> get _materialsDir async {
+    final root = await _rootDir;
+    final dir = Directory(p.join(root.path, '资料区'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// 记忆包目录
+  Future<Directory> get _memoryDir async {
+    final root = await _rootDir;
+    final dir = Directory(p.join(root.path, '记忆包'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// Skill目录
+  Future<Directory> get skillDir async {
+    final root = await _rootDir;
+    final dir = Directory(p.join(root.path, 'Skill'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// Agent目录
+  Future<Directory> get agentDir async {
+    final root = await _rootDir;
+    final dir = Directory(p.join(root.path, 'Agent'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  // ===== 作品区操作 =====
+
   Future<String> createProjectDir(String novelId, String title) async {
-    final dir = await _projectsDir;
+    final dir = await _worksDir;
     final projectDir = Directory(p.join(dir.path, '${novelId}_${title}'));
     await projectDir.create(recursive: true);
     await Directory(p.join(projectDir.path, 'chapters')).create();
-    await Directory(p.join(projectDir.path, 'references')).create();
-    await Directory(p.join(projectDir.path, 'prompts')).create();
-    await Directory(p.join(projectDir.path, 'assets')).create();
     return projectDir.path;
   }
 
   Future<String> getProjectDir(String novelId, String title) async {
-    final dir = await _projectsDir;
+    final dir = await _worksDir;
     return p.join(dir.path, '${novelId}_${title}');
   }
 
@@ -60,33 +98,105 @@ class LocalFileDataSource {
     await file.writeAsString(jsonEncode(chapters));
   }
 
-  Future<void> exportNovelPack(String projectPath, String exportPath) async {
-    final encoder = ZipFileEncoder();
-    encoder.create(exportPath);
-    await encoder.addDirectory(Directory(projectPath));
-    encoder.close();
-  }
-
-  Future<String> importNovelPack(String packPath) async {
-    final bytes = await File(packPath).readAsBytes();
-    final archive = ZipDecoder().decodeBytes(bytes);
-    final dir = await _projectsDir;
-    final novelId = _uuid.v4();
-    final extractDir = Directory(p.join(dir.path, novelId));
-    await extractDir.create(recursive: true);
-
-    for (final file in archive) {
-      if (file.isFile) {
-        final outFile = File(p.join(extractDir.path, file.name));
-        await outFile.create(recursive: true);
-        await outFile.writeAsBytes(file.content as List<int>);
-      }
-    }
-    return extractDir.path;
-  }
-
   Future<void> deleteProjectDir(String projectPath) async {
     final dir = Directory(projectPath);
     if (await dir.exists()) await dir.delete(recursive: true);
+  }
+
+  // ===== 资料区操作 =====
+
+  /// 获取某作品的资料目录：资料区/{novelId}_{title}/
+  Future<String> getMaterialsDir(String novelId, String title) async {
+    final dir = await _materialsDir;
+    final matDir = Directory(p.join(dir.path, '${novelId}_${title}'));
+    if (!await matDir.exists()) await matDir.create(recursive: true);
+    return matDir.path;
+  }
+
+  // ===== 记忆包操作 =====
+
+  /// 获取某作品的记忆文件路径：记忆包/{novelId}_{title}_memory.txt
+  Future<String> getMemoryPath(String novelId, String title) async {
+    final dir = await _memoryDir;
+    return p.join(dir.path, '${novelId}_${title}_memory.txt');
+  }
+
+  // ===== 数据迁移 =====
+
+  /// 迁移旧目录结构到新结构（兼容旧版本数据）
+  Future<void> migrateIfNeeded() async {
+    final root = await _rootDir;
+
+    // 检查是否有旧格式数据（直接在 NovelProjects/ 下的作品目录）
+    final oldEntries = await root.list().toList();
+    final oldWorkDirs = oldEntries.whereType<Directory>().where((d) {
+      final name = p.basename(d.path);
+      // 旧格式：{novelId}_{title} 直接在 NovelProjects/ 下
+      // 新格式：作品区/资料区/Skill/Agent/记忆包
+      return !['作品区', '资料区', 'Skill', 'Agent', '记忆包', 'materials', 'memories', 'skills'].contains(name);
+    }).toList();
+
+    if (oldWorkDirs.isEmpty) return; // 无需迁移
+
+    // 迁移作品目录
+    final worksDir = await _worksDir;
+    for (final oldDir in oldWorkDirs) {
+      final name = p.basename(oldDir.path);
+      final newDir = Directory(p.join(worksDir.path, name));
+      if (!await newDir.exists()) {
+        await oldDir.rename(newDir.path);
+      }
+    }
+
+    // 迁移旧的 materials 目录
+    final oldMaterials = Directory(p.join(root.path, 'materials'));
+    if (await oldMaterials.exists()) {
+      final materialsDir = await _materialsDir;
+      final files = await oldMaterials.list().toList();
+      for (final file in files) {
+        if (file is File) {
+          final name = p.basename(file.path);
+          final newFile = File(p.join(materialsDir.path, name));
+          if (!await newFile.exists()) {
+            await file.rename(newFile.path);
+          }
+        }
+      }
+      try { await oldMaterials.delete(); } catch (_) {}
+    }
+
+    // 迁移旧的 memories 目录
+    final oldMemories = Directory(p.join(root.path, 'memories'));
+    if (await oldMemories.exists()) {
+      final memoryDir = await _memoryDir;
+      final files = await oldMemories.list().toList();
+      for (final file in files) {
+        if (file is File) {
+          final name = p.basename(file.path);
+          final newFile = File(p.join(memoryDir.path, name));
+          if (!await newFile.exists()) {
+            await file.rename(newFile.path);
+          }
+        }
+      }
+      try { await oldMemories.delete(); } catch (_) {}
+    }
+
+    // 迁移旧的 skills 目录
+    final oldSkills = Directory(p.join(root.path, 'skills'));
+    if (await oldSkills.exists()) {
+      final skillDirPath = await skillDir;
+      final files = await oldSkills.list().toList();
+      for (final file in files) {
+        if (file is File) {
+          final name = p.basename(file.path);
+          final newFile = File(p.join(skillDirPath.path, name));
+          if (!await newFile.exists()) {
+            await file.rename(newFile.path);
+          }
+        }
+      }
+      try { await oldSkills.delete(); } catch (_) {}
+    }
   }
 }

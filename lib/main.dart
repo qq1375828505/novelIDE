@@ -9,6 +9,7 @@ import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/config_service.dart';
 import 'package:novel_ide/data/services/connectivity_service.dart';
 import 'package:novel_ide/data/services/notification_service.dart';
+import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
@@ -62,6 +63,13 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> {
     super.initState();
     
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 迁移旧目录结构到新结构
+      try {
+        await LocalFileDataSource().migrateIfNeeded();
+      } catch (e) {
+        debugPrint('Migration error: $e');
+      }
+
       // 加载持久化设置
       _loadSettings();
       

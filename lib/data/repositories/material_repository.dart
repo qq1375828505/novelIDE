@@ -10,7 +10,7 @@ class MaterialRepository {
 
   Future<Directory> _getMaterialsDir(String novelId) async {
     final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects', 'materials'));
+    final dir = Directory(p.join(docs.path, 'NovelProjects', '资料区'));
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:novel_ide/data/models/writing_skill_model.dart';
 import 'package:novel_ide/data/repositories/skill_repository.dart';
 
@@ -8,7 +11,7 @@ final skillsProvider = FutureProvider<List<WritingSkill>>((ref) async {
   return repo.getAllSkills();
 });
 
-/// 写作技能管理页面
+/// Skill管理页面
 class SkillManagePage extends ConsumerStatefulWidget {
   const SkillManagePage({super.key});
 
@@ -25,11 +28,16 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('写作技能'),
+        title: const Text('Skill'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.upload_file),
+            tooltip: '导入Skill',
+            onPressed: () => _importSkill(),
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
-            tooltip: '添加技能',
+            tooltip: '新建Skill',
             onPressed: () => _showSkillDialog(),
           ),
         ],
@@ -43,11 +51,11 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
                 children: [
                   Icon(Icons.auto_awesome, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 16),
-                  Text('暂无技能', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
+                  Text('暂无Skill', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () => _showSkillDialog(),
-                    child: const Text('添加第一个技能'),
+                    child: const Text('新建Skill'),
                   ),
                 ],
               ),
@@ -197,7 +205,7 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('确认删除'),
-        content: Text('确定删除技能「${skill.name}」？'),
+        content: Text('确定删除Skill「${skill.name}」？'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
@@ -211,6 +219,51 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
         ],
       ),
     );
+  }
+
+  Future<void> _importSkill() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['md', 'txt', 'json'],
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final file = File(result.files.first.path!);
+      final content = await file.readAsString();
+      final fileName = result.files.first.name;
+      final nameWithoutExt = fileName.replaceAll(RegExp(r'\.(md|txt|json)$'), '');
+
+      // 尝试解析为JSON，否则作为纯文本处理
+      Map<String, dynamic>? skillData;
+      try {
+        if (content.trimLeft().startsWith('{')) {
+          skillData = jsonDecode(content) as Map<String, dynamic>;
+        }
+      } catch (_) {}
+
+      final newSkill = _repo.createSkill(
+        name: skillData?['name'] as String? ?? nameWithoutExt,
+        category: skillData?['category'] as String? ?? '导入',
+        description: skillData?['description'] as String? ?? '从 $fileName 导入',
+        content: skillData?['content'] as String? ?? content.trim(),
+        keywords: (skillData?['keywords'] as List<dynamic>?)?.cast<String>() ?? [],
+      );
+      await _repo.addSkill(newSkill);
+      ref.invalidate(skillsProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已导入 Skill: ${newSkill.name}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('导入失败: $e')),
+        );
+      }
+    }
   }
 
   void _showSkillDetail(WritingSkill skill) {
@@ -255,12 +308,12 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isEdit ? '编辑技能' : '添加技能'),
+        title: Text(isEdit ? '编辑Skill' : '新建Skill'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '技能名称')),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Skill名称')),
               const SizedBox(height: 12),
               TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类')),
               const SizedBox(height: 12),
@@ -271,13 +324,13 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
                 decoration: const InputDecoration(
                   labelText: '匹配关键词（用顿号分隔）',
                   hintText: '例如：伏笔、悬念、埋线',
-                  helperText: 'AI对话中出现这些词时自动触发此技能',
+                  helperText: 'AI对话中出现这些词时自动触发此Skill',
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: contentCtrl,
-                decoration: const InputDecoration(labelText: '技能内容（详细说明/Prompt）'),
+                decoration: const InputDecoration(labelText: 'Skill内容（详细说明/Prompt）'),
                 maxLines: 8,
               ),
             ],

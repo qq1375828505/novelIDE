@@ -19,7 +19,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'novel_ide.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -90,7 +90,8 @@ class DatabaseHelper {
         temperature REAL DEFAULT 1.0,
         max_tokens INTEGER DEFAULT 4096,
         is_local INTEGER DEFAULT 0,
-        protocol TEXT DEFAULT 'openaiCompatible'
+        protocol TEXT DEFAULT 'openaiCompatible',
+        model_type TEXT DEFAULT 'text'
       )
     ''');
 
@@ -120,6 +121,10 @@ class DatabaseHelper {
     if (oldVersion < 4) {
       // 添加 protocol 字段到 ai_configs 表
       await db.execute('ALTER TABLE ai_configs ADD COLUMN protocol TEXT DEFAULT "openaiCompatible"');
+    }
+    if (oldVersion < 5) {
+      // 添加 model_type 字段到 ai_configs 表
+      await db.execute('ALTER TABLE ai_configs ADD COLUMN model_type TEXT DEFAULT "text"');
     }
   }
 
@@ -174,7 +179,6 @@ class DatabaseHelper {
     await db.insert('ai_configs', config, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  /// 更新 ai_config 以包含 protocol 字段
   Map<String, dynamic> toDbMap(AiConfig config) {
     return {
       'id': config.id,
@@ -184,7 +188,8 @@ class DatabaseHelper {
       'temperature': config.temperature,
       'max_tokens': config.maxTokens,
       'is_local': config.isLocal ? 1 : 0,
-      'protocol': config.protocol.name, // 保存枚举的字符串值
+      'protocol': config.protocol.name,
+      'model_type': config.modelType.name,
     };
   }
 
@@ -202,6 +207,16 @@ class DatabaseHelper {
     } catch (_) {
       // 无效值时使用默认
     }
+    // 转换 modelType 字符串为枚举
+    ModelType modelType = ModelType.text;
+    try {
+      if (map['model_type'] != null) {
+        modelType = ModelType.values.firstWhere(
+          (e) => e.name == map['model_type'],
+          orElse: () => ModelType.text,
+        );
+      }
+    } catch (_) {}
     return AiConfig(
       id: map['id'] as String,
       name: map['name'] as String,
@@ -212,6 +227,7 @@ class DatabaseHelper {
       maxTokens: map['max_tokens'] as int,
       isLocal: (map['is_local'] as int) == 1,
       protocol: protocol,
+      modelType: modelType,
     );
   }
 

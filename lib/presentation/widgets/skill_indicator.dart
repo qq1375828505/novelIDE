@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:novel_ide/data/models/writing_skill_model.dart';
 
-/// "已启动技能" 提示气泡
-/// 在AI回复之前显示，告知用户哪些技能被自动触发
+/// "已启动Skill" 提示气泡
+/// 在AI回复之前显示，告知用户哪些Skill被自动触发
 class SkillIndicator extends StatelessWidget {
   final List<WritingSkill> matchedSkills;
 
@@ -29,7 +29,7 @@ class SkillIndicator extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              '已启动技能：$names',
+              '已启动Skill：$names',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.blueGrey[700],

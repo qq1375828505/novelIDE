@@ -228,16 +228,16 @@ class WorkspaceAgent {
     // ====== Skill工具 ======
     AgentTool(
       name: 'get_skills',
-      description: '获取所有已启用的写作技能，包括内置和自定义技能',
+      description: '获取所有已启用的Skill，包括内置和自定义Skill',
     ),
     AgentTool(
       name: 'add_skill',
-      description: '添加一个自定义写作技能',
+      description: '添加一个自定义Skill',
       parameters: {
-        'name': '技能名称',
+        'name': 'Skill名称',
         'category': '分类（如：剧情技巧/文笔技巧/角色技巧）',
-        'description': '技能描述',
-        'content': '技能详细内容',
+        'description': 'Skill描述',
+        'content': 'Skill详细内容',
       },
     ),
   ];

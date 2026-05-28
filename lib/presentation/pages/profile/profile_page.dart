@@ -168,6 +168,14 @@ void _showEditAiConfigDialog(BuildContext context, WidgetRef ref, AiConfig confi
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
+  Widget _buildVoiceSubtitle(WidgetRef ref) {
+    final voiceConfig = ref.watch(selectedVoiceConfigProvider);
+    if (voiceConfig != null) {
+      return Text('已配置：${voiceConfig.name}', style: TextStyle(fontSize: 12, color: Colors.teal[600]));
+    }
+    return Text('待添加 · 通话功能不可用', style: TextStyle(fontSize: 12, color: Colors.orange[600]));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(darkModeProvider);
@@ -222,8 +230,8 @@ class ProfilePage extends ConsumerWidget {
           const SizedBox(height: 4),
           ListTile(
             leading: const Icon(Icons.record_voice_over, color: Colors.teal),
-            title: const Text('语音通话模型'),
-            subtitle: const Text('配置AI语音通话使用的模型（可与文字模型不同）'),
+            title: const Text('语音模型'),
+            subtitle: _buildVoiceSubtitle(ref),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const VoiceConfigPage()));
@@ -234,7 +242,7 @@ class ProfilePage extends ConsumerWidget {
           _SectionHeader(title: '番茄写作'),
           ListTile(
             leading: const Icon(Icons.auto_awesome, color: AppColors.tomatoRed),
-            title: const Text('Agent市场'),
+            title: const Text('Agent'),
             subtitle: const Text('番茄大纲生成器、爽点检查器、水文检测器等'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
@@ -292,7 +300,7 @@ class ProfilePage extends ConsumerWidget {
           // Skills entry
           ListTile(
             leading: const Icon(Icons.auto_awesome, color: Colors.deepPurple),
-            title: const Text('写作技能'),
+            title: const Text('Skill'),
             subtitle: const Text('管理和自定义AI写作技巧'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {

@@ -37,7 +37,7 @@ class _AgentMarketplacePageState extends ConsumerState<AgentMarketplacePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Agent市场'),
+        title: const Text('Agent'),
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: const [

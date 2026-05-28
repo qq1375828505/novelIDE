@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// 写作技能模型
+/// Skill模型
 class WritingSkill {
   final String id;
   String name;

@@ -10,7 +10,7 @@ class SkillRepository {
 
   Future<String> _getSkillDir() async {
     final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects', 'skills'));
+    final dir = Directory(p.join(docs.path, 'NovelProjects', 'Skill'));
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir.path;
   }
@@ -77,7 +77,7 @@ class SkillRepository {
     if (enabled.isEmpty) return '';
 
     final buffer = StringBuffer();
-    buffer.writeln('【写作技能参考】');
+    buffer.writeln('【Skill参考】');
     for (final skill in enabled) {
       buffer.writeln('\n## ${skill.name}（${skill.category}）');
       buffer.writeln(skill.content);

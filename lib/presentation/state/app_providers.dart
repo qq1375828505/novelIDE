@@ -124,6 +124,7 @@ final itemsProvider = StateProvider.family<List<Item>, String>((ref, novelId) =>
 // AI Config
 final aiConfigsProvider = StateProvider<List<AiConfig>>((ref) => []);
 final selectedAiConfigProvider = StateProvider<AiConfig?>((ref) => null);
+final selectedVoiceConfigProvider = StateProvider<AiConfig?>((ref) => null);
 
 // Network status
 final isOnlineProvider = StateProvider<bool>((ref) => true);
@@ -159,9 +160,18 @@ Future<void> loadAiConfigs(WidgetRef ref) async {
     configs.add(db.fromDbMap(row, apiKey));
   }
   ref.read(aiConfigsProvider.notifier).state = configs;
-  // Auto-select first config if none selected
+  // Auto-select first text config if none selected
   if (configs.isNotEmpty && ref.read(selectedAiConfigProvider) == null) {
-    ref.read(selectedAiConfigProvider.notifier).state = configs.first;
+    ref.read(selectedAiConfigProvider.notifier).state = configs.firstWhere(
+      (c) => c.modelType == ModelType.text,
+      orElse: () => configs.first,
+    );
+  }
+  // Load voice config
+  final voiceId = ConfigService.voiceConfigId;
+  if (voiceId.isNotEmpty) {
+    final voiceConfig = configs.where((c) => c.id == voiceId).firstOrNull;
+    ref.read(selectedVoiceConfigProvider.notifier).state = voiceConfig;
   }
 }
 
