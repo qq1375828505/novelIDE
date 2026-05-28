@@ -17,6 +17,7 @@ import 'package:novel_ide/presentation/pages/profile/skill_manage_page.dart';
 import 'package:novel_ide/presentation/pages/profile/voice_config_page.dart';
 import 'package:novel_ide/presentation/widgets/top_snackbar.dart';
 import 'package:novel_ide/data/services/default_config_service.dart';
+import 'package:novel_ide/data/services/announcement_service.dart';
 
 /// 根据 URL 自动识别 API 协议类型
 /// - URL 包含 anthropic / claude → Anthropic 协议
@@ -388,12 +389,79 @@ class ProfilePage extends ConsumerWidget {
           ),
           const Divider(),
 
+          // 公告入口
+          ListTile(
+            leading: const Icon(Icons.campaign, color: Colors.orange),
+            title: const Text('公告'),
+            subtitle: const Text('免费AI模型使用说明、注册指引'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showAnnouncement(context),
+          ),
+          const SizedBox(height: 4),
+
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('关于'),
             subtitle: const Text('网文写作IDE v1.0.0 · 完全单机运行'),
           ),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  /// 显示公告弹窗
+  void _showAnnouncement(BuildContext context) {
+    final announcement = AnnouncementService.getAnnouncement();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.campaign, color: Colors.blue),
+            const SizedBox(width: 8),
+            Expanded(child: Text(announcement['title']!)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(announcement['content']!),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                // TODO: 打开浏览器跳转注册链接
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.link, size: 16, color: Colors.blue),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        announcement['url']!,
+                        style: const TextStyle(color: Colors.blue, fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('关闭'),
+          ),
         ],
       ),
     );

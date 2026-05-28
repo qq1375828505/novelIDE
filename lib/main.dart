@@ -10,6 +10,7 @@ import 'package:novel_ide/data/services/config_service.dart';
 import 'package:novel_ide/data/services/connectivity_service.dart';
 import 'package:novel_ide/data/services/notification_service.dart';
 import 'package:novel_ide/data/services/default_config_service.dart';
+import 'package:novel_ide/data/services/announcement_service.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -83,6 +84,9 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> with WidgetsBindingOb
       // 避免权限对话框与启动动画冲突导致卡死
       await Future.delayed(const Duration(milliseconds: 500));
       await _requestBasicPermissions();
+      
+      // 首次启动显示公告
+      _showAnnouncementIfNeeded();
     });
 
     ConnectivityService.onStatusChanged.listen((isOnline) {
@@ -121,6 +125,70 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> with WidgetsBindingOb
       debugPrint('State saved');
     } catch (e) {
       debugPrint('Save state error: $e');
+    }
+  }
+
+  /// 显示公告（首次启动或公告更新时）
+  void _showAnnouncementIfNeeded() async {
+    final shouldShow = await AnnouncementService.shouldShowAnnouncement();
+    if (shouldShow && mounted) {
+      final announcement = AnnouncementService.getAnnouncement();
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.campaign, color: Colors.blue),
+              const SizedBox(width: 8),
+              Expanded(child: Text(announcement['title']!)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(announcement['content']!),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () {
+                  // TODO: 打开浏览器
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.link, size: 16, color: Colors.blue),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          announcement['url']!,
+                          style: const TextStyle(color: Colors.blue, fontSize: 12),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                AnnouncementService.markAsShown();
+                Navigator.pop(ctx);
+              },
+              child: const Text('我知道了'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
