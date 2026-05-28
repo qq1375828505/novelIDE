@@ -9,10 +9,10 @@ class SkillRepository {
   static final _uuid = Uuid();
 
   Future<String> _getSkillDir() async {
-    final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects', 'Skill'));
-    if (!await dir.exists()) await dir.create(recursive: true);
-    return dir.path;
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final skillDir = Directory(p.join(dir.path, 'NovelProjects', 'Skill'));
+    if (!await skillDir.exists()) await skillDir.create(recursive: true);
+    return skillDir.path;
   }
 
   Future<String> _getEnabledStatePath() async {

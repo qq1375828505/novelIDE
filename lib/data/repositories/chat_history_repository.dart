@@ -11,13 +11,13 @@ class ChatHistoryRepository {
 
   /// 获取存储文件路径
   Future<String> _getFilePath() async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
     return '${dir.path}/NovelProjects/$_fileName';
   }
 
   /// 确保目录存在
   Future<void> _ensureDirectory() async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
     final path = '${dir.path}/NovelProjects';
     final directory = Directory(path);
     if (!await directory.exists()) {

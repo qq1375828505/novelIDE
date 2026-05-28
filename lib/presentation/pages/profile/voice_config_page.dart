@@ -4,9 +4,9 @@ import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/config_service.dart';
-import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/datasources/secure_storage_datasource.dart';
+import 'package:dio/dio.dart';
 
 /// 语音模型配置页面
 /// 只允许添加 TTS/STT 语音模型，文本模型不可用
@@ -366,7 +366,7 @@ class _VoiceConfigPageState extends ConsumerState<VoiceConfigPage> {
     );
   }
 
-  /// 测试语音模型连接
+  /// 测试语音模型连接 - 只验证API地址和Key的连通性
   Future<void> _testVoiceModel(AiConfig config) async {
     showDialog(
       context: context,
@@ -383,37 +383,64 @@ class _VoiceConfigPageState extends ConsumerState<VoiceConfigPage> {
     );
 
     try {
-      // 从SecureStorage读取API Key
       final apiKey = await SecureStorageDataSource().readApiKey(config.id);
-      final testConfig = AiConfig(
-        id: config.id,
-        name: config.name,
-        apiUrl: config.apiUrl,
-        modelName: config.modelName,
-        apiKey: apiKey,
-        modelType: config.modelType,
-        protocol: config.protocol,
-      );
+      if (apiKey == null || apiKey.isEmpty) {
+        if (mounted) Navigator.pop(context);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('请先设置 API Key'), backgroundColor: Colors.orange),
+          );
+        }
+        return;
+      }
 
-      final aiService = AiService();
-      // 发送一个简单的测试请求
-      await aiService.send(
-        config: testConfig,
-        systemPrompt: '你是一个测试助手',
-        userMessage: '测试',
+      // 使用Dio直接发送HEAD请求测试连通性，不调用chat接口（TTS接口不支持chat）
+      final dio = Dio();
+      final response = await dio.head(
+        config.apiUrl,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $apiKey',
+            'api-key': apiKey,
+          },
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
       );
 
       if (mounted) Navigator.pop(context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('「${config.name}」连接成功'), backgroundColor: Colors.green),
+          SnackBar(content: Text('「${config.name}」连接成功 (HTTP ${response.statusCode})'), backgroundColor: Colors.green),
+        );
+      }
+    } on DioException catch (e) {
+      if (mounted) Navigator.pop(context);
+      String errorMsg;
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.sendTimeout) {
+        errorMsg = '连接超时，请检查API地址';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMsg = '无法连接服务器，请检查API地址';
+      } else if (e.response?.statusCode == 401) {
+        errorMsg = 'API Key 无效 (401)';
+      } else if (e.response?.statusCode == 403) {
+        errorMsg = 'API Key 无权限 (403)';
+      } else if (e.response?.statusCode == 404) {
+        // 404也说明服务器可达，只是端点不同
+        errorMsg = '服务器可达，但端点返回404（TTS接口可能不支持HEAD请求，这不影响正常使用）';
+      } else {
+        errorMsg = '连接失败: ${e.message ?? e.type.name}';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('连接失败: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('测试失败: $e'), backgroundColor: Colors.red),
         );
       }
     }

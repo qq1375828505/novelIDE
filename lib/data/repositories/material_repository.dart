@@ -9,10 +9,10 @@ class MaterialRepository {
   static final _uuid = Uuid();
 
   Future<Directory> _getMaterialsDir(String novelId) async {
-    final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects', '资料区'));
-    if (!await dir.exists()) await dir.create(recursive: true);
-    return dir;
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final matDir = Directory(p.join(dir.path, 'NovelProjects', '资料区'));
+    if (!await matDir.exists()) await matDir.create(recursive: true);
+    return matDir;
   }
 
   // Characters

@@ -13,7 +13,7 @@ class VoiceService {
   bool _isSpeaking = false;
   bool _speechAvailable = false;
   bool _isMuted = false; // 静音状态
-  bool _isSpeakerOn = true; // 扬声器状态
+  bool _isSpeakerOn = false; // 扬声器状态，默认关闭（走听筒/耳机）
   String _lastWords = '';
   String _localeId = 'zh_CN';
 

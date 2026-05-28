@@ -8,12 +8,14 @@ import 'package:archive/archive.dart';
 class LocalFileDataSource {
   static final _uuid = Uuid();
 
-  /// 根目录：documents/NovelProjects/
+  /// 根目录：使用外部存储公共持久化目录，升级/卸载不丢失
+  /// Android: /storage/emulated/0/Android/data/{package}/files/NovelProjects/
+  /// 使用 getExternalStorageDirectory() 确保数据持久化
   Future<Directory> get _rootDir async {
-    final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects'));
-    if (!await dir.exists()) await dir.create(recursive: true);
-    return dir;
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final root = Directory(p.join(dir.path, 'NovelProjects'));
+    if (!await root.exists()) await root.create(recursive: true);
+    return root;
   }
 
   /// 作品区目录

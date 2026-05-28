@@ -17,10 +17,10 @@ class NovelMemory {
 
   /// Get the path to the memory file for this novel.
   Future<String> get _memoryPath async {
-    final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects', '记忆包'));
-    if (!await dir.exists()) await dir.create(recursive: true);
-    return p.join(dir.path, '${novelId}_memory.txt');
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final memDir = Directory(p.join(dir.path, 'NovelProjects', '记忆包'));
+    if (!await memDir.exists()) await memDir.create(recursive: true);
+    return p.join(memDir.path, '${novelId}_memory.txt');
   }
 
   /// Check if a memory file exists for this novel.

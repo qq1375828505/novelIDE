@@ -201,8 +201,8 @@ class _ExportPageState extends State<ExportPage> {
       isExpanded: true,
     );
 
-    final docs = await getApplicationDocumentsDirectory();
-    final matDir = Directory(p.join(docs.path, 'NovelProjects', 'materials'));
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final matDir = Directory(p.join(dir.path, 'NovelProjects', '资料区'));
 
     if (await matDir.exists()) {
       // 按类型分组
@@ -268,8 +268,8 @@ class _ExportPageState extends State<ExportPage> {
 
       final fs = LocalFileDataSource();
       final projectPath = await fs.getProjectDir(widget.novelId, widget.novelTitle);
-      final docs = await getApplicationDocumentsDirectory();
-      final matDir = Directory(p.join(docs.path, 'NovelProjects', 'materials'));
+      final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+      final matDir = Directory(p.join(dir.path, 'NovelProjects', '资料区'));
 
       // 收集所有选中的文件路径
       final selectedPaths = <String>[];

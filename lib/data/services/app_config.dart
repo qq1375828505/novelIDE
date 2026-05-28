@@ -20,8 +20,8 @@ class AppConfig {
   }
 
   Future<String> get configPath async {
-    final docs = await getApplicationDocumentsDirectory();
-    return p.join(docs.path, 'app_config.json');
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    return p.join(dir.path, 'app_config.json');
   }
 
   /// Default configuration.

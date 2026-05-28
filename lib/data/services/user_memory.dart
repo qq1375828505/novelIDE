@@ -10,10 +10,10 @@ class UserMemory {
 
   /// 记忆文件路径
   static Future<String> get _memoryPath async {
-    final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(docs.path, 'NovelProjects', 'memories'));
-    if (!await dir.exists()) await dir.create(recursive: true);
-    return p.join(dir.path, 'user_memory.txt');
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final memDir = Directory(p.join(dir.path, 'NovelProjects', 'memories'));
+    if (!await memDir.exists()) await memDir.create(recursive: true);
+    return p.join(memDir.path, 'user_memory.txt');
   }
 
   /// 检查记忆文件是否存在
