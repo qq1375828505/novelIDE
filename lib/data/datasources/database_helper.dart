@@ -154,6 +154,14 @@ class DatabaseHelper {
     ''');
   }
 
+  /// Close the database connection.
+  Future<void> close() async {
+    if (_db != null) {
+      await _db!.close();
+      _db = null;
+    }
+  }
+
   // --- AI Config CRUD ---
 
   Future<List<Map<String, dynamic>>> getAllAiConfigs() async {

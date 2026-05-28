@@ -43,9 +43,9 @@ jobs:
         name: release-apk
         path: novel-ide-android.apk
 
-    # 自动创建/更新 Release 并上传 APK（仅 master 分支 push，非 PR）
+    # 自动创建/更新 Release 并上传 APK（仅 main/master 分支 push，非 PR）
     - name: Auto Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
       uses: softprops/action-gh-release@v2
       with:
         tag_name: "latest"

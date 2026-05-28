@@ -236,15 +236,20 @@ class NovelMemory {
   // --- Singleton cache for the currently loaded memory ---
   static String? _cachedContent;
   static String? _cachedNovelId;
+  static DateTime? _cachedAt;
+  static const _cacheTtl = Duration(minutes: 5);
 
-  /// Get memory for AI context. Returns cached version if available.
+  /// Get memory for AI context. Returns cached version if available (5min TTL).
   static Future<String> getForAiContext(String novelId, String novelTitle) async {
-    if (_cachedContent != null && _cachedNovelId == novelId) {
+    final now = DateTime.now();
+    if (_cachedContent != null && _cachedNovelId == novelId &&
+        _cachedAt != null && now.difference(_cachedAt!) < _cacheTtl) {
       return _cachedContent!;
     }
     final memory = NovelMemory(novelId: novelId, novelTitle: novelTitle);
     _cachedContent = await memory.autoUpdate();
     _cachedNovelId = novelId;
+    _cachedAt = now;
     return _cachedContent!;
   }
 
@@ -252,5 +257,6 @@ class NovelMemory {
   static void invalidateCache() {
     _cachedContent = null;
     _cachedNovelId = null;
+    _cachedAt = null;
   }
 }
