@@ -9,19 +9,52 @@ import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
 import 'package:novel_ide/presentation/pages/works/novel_import_dialog.dart';
 import 'package:novel_ide/presentation/pages/works/export_page.dart';
 import 'package:novel_ide/core/router.dart';
+import 'package:novel_ide/data/repositories/material_repository.dart';
 
-class NovelDetailPage extends ConsumerWidget {
+class NovelDetailPage extends ConsumerStatefulWidget {
   final Novel novel;
   const NovelDetailPage({super.key, required this.novel});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final volumesAsync = ref.watch(volumesProvider(novel.id));
-    final chaptersAsync = ref.watch(chaptersProvider(novel.id));
+  ConsumerState<NovelDetailPage> createState() => _NovelDetailPageState();
+}
+
+class _NovelDetailPageState extends ConsumerState<NovelDetailPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabCtrl;
+  static const _tabs = ['章节', '大纲', '角色', '设定'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: _tabs.length, vsync: this);
+    // Load materials for this novel
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadNovelMaterials(ref, widget.novel.id);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final volumesAsync = ref.watch(volumesProvider(widget.novel.id));
+    final chaptersAsync = ref.watch(chaptersProvider(widget.novel.id));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(novel.title),
+        title: Text(widget.novel.title),
+        bottom: TabBar(
+          controller: _tabCtrl,
+          tabs: _tabs.map((t) => Tab(text: t)).toList(),
+          labelColor: AppColors.primary,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: AppColors.primary,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -30,7 +63,7 @@ class NovelDetailPage extends ConsumerWidget {
               Navigator.pushNamed(
                 context,
                 AppRouter.globalSearch,
-                arguments: {'novelId': novel.id, 'novelTitle': novel.title},
+                arguments: {'novelId': widget.novel.id, 'novelTitle': widget.novel.title},
               );
             },
           ),
@@ -44,31 +77,37 @@ class NovelDetailPage extends ConsumerWidget {
             tooltip: '导出作品',
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(
-                builder: (_) => ExportPage(novelId: novel.id, novelTitle: novel.title),
+                builder: (_) => ExportPage(novelId: widget.novel.id, novelTitle: widget.novel.title),
               ));
             },
           ),
         ],
       ),
-      body: volumesAsync.when(
-        data: (volumes) {
-          if (volumes.isEmpty) {
-            return _buildEmptyVolume(context, ref);
-          }
-          return chaptersAsync.when(
-            data: (chapters) {
-              return _ChapterTreeView(
-                novel: novel,
-                volumes: volumes,
-                chapters: chapters,
+      body: TabBarView(
+        controller: _tabCtrl,
+        children: [
+          // Tab 0: 章节
+          volumesAsync.when(
+            data: (volumes) {
+              if (volumes.isEmpty) return _buildEmptyVolume(context, ref);
+              return chaptersAsync.when(
+                data: (chapters) => _ChapterTreeView(
+                  novel: widget.novel, volumes: volumes, chapters: chapters,
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('加载失败: $err')),
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('加载失败: $err')),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('加载失败: $err')),
+          ),
+          // Tab 1: 大纲
+          _OutlineTab(novelId: widget.novel.id),
+          // Tab 2: 角色
+          _CharactersTab(novelId: widget.novel.id),
+          // Tab 3: 设定
+          _SettingsTab(novelId: widget.novel.id),
+        ],
       ),
       floatingActionButton: volumesAsync.when(
         data: (volumes) {
@@ -160,13 +199,13 @@ class NovelDetailPage extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               if (ctrl.text.trim().isEmpty) return;
-              final volumes = await ref.read(volumeRepoProvider).getVolumesByNovel(novel.id);
+              final volumes = await ref.read(volumeRepoProvider).getVolumesByNovel(widget.novel.id);
               await ref.read(volumeRepoProvider).createVolume(
-                novelId: novel.id,
+                novelId: widget.novel.id,
                 title: ctrl.text.trim(),
                 orderIndex: volumes.length,
               );
-              ref.invalidate(volumesProvider(novel.id));
+              ref.invalidate(volumesProvider(widget.novel.id));
               if (context.mounted) Navigator.pop(context);
             },
             child: const Text('创建'),
@@ -180,7 +219,7 @@ class NovelDetailPage extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => NovelImportDialog(novelId: novel.id, novelTitle: novel.title),
+      builder: (ctx) => NovelImportDialog(novelId: widget.novel.id, novelTitle: widget.novel.title),
     );
   }
 }
@@ -204,7 +243,7 @@ void _showRenameVolumeDialog(BuildContext context, WidgetRef ref, Volume volume,
             if (ctrl.text.trim().isEmpty) return;
             final updated = volume.copyWith(title: ctrl.text.trim());
             await ref.read(volumeRepoProvider).updateVolume(updated);
-            ref.invalidate(volumesProvider(novel.id));
+            ref.invalidate(volumesProvider(widget.novel.id));
             if (ctx.mounted) Navigator.pop(ctx);
           },
           child: const Text('确定'),
@@ -291,8 +330,8 @@ class _ChapterTreeView extends ConsumerWidget {
                                     await ref.read(chapterRepoProvider).deleteChapter(ch.id);
                                   }
                                   await ref.read(volumeRepoProvider).deleteVolume(volume.id);
-                                  ref.invalidate(volumesProvider(novel.id));
-                                  ref.invalidate(chaptersProvider(novel.id));
+                                  ref.invalidate(volumesProvider(widget.novel.id));
+                                  ref.invalidate(chaptersProvider(widget.novel.id));
                                 }
                               },
                             ),
@@ -399,7 +438,7 @@ class _ChapterTreeView extends ConsumerWidget {
                 title: ctrl.text.trim(),
                 orderIndex: volChapters.length,
               );
-              ref.invalidate(chaptersProvider(novel.id));
+              ref.invalidate(chaptersProvider(widget.novel.id));
               if (context.mounted) {
                 Navigator.pop(context);
                 ref.read(selectedChapterProvider.notifier).state = chapter;
@@ -527,7 +566,7 @@ class _ChapterTile extends ConsumerWidget {
                       );
                       if (confirm == true) {
                         await ref.read(chapterRepoProvider).deleteChapter(chapter.id);
-                        ref.invalidate(chaptersProvider(novel.id));
+                        ref.invalidate(chaptersProvider(widget.novel.id));
                       }
                     },
                   ),
@@ -568,4 +607,163 @@ void _showRenameChapterDialog(BuildContext context, WidgetRef ref, Chapter chapt
       ],
     ),
   );
+}
+
+
+// ========== 大纲 Tab ==========
+class _OutlineTab extends StatelessWidget {
+  final String novelId;
+  const _OutlineTab({required this.novelId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.account_tree_outlined, size: 56, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            const Text('暂无大纲', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('拥有一份大纲的作品更容易获得成功', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('大纲编辑功能开发中...')),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('创建总纲'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ========== 角色 Tab ==========
+class _CharactersTab extends ConsumerWidget {
+  final String novelId;
+  const _CharactersTab({required this.novelId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final characters = ref.watch(charactersProvider(novelId));
+
+    if (characters.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_outline, size: 56, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              const Text('暂无角色', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('添加角色让故事更丰满', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('请使用导入功能或AI对话创建角色')),
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('添加角色'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: characters.length,
+      itemBuilder: (context, index) {
+        final c = characters[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: const Icon(Icons.person, color: AppColors.primary),
+            ),
+            title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text(c.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: 打开角色编辑页
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ========== 设定 Tab ==========
+class _SettingsTab extends ConsumerWidget {
+  final String novelId;
+  const _SettingsTab({required this.novelId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingCardsProvider(novelId));
+
+    if (settings.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.public_outlined, size: 56, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              const Text('暂无设定', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('世界观和设定让故事更有深度', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('请使用导入功能或AI对话创建设定')),
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('添加设定'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: settings.length,
+      itemBuilder: (context, index) {
+        final s = settings[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.blue.withOpacity(0.1),
+              child: const Icon(Icons.public, color: Colors.blue),
+            ),
+            title: Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text(s.content, maxLines: 2, overflow: TextOverflow.ellipsis),
+            trailing: const Icon(Icons.chevron_right),
+          ),
+        );
+      },
+    );
+  }
 }
