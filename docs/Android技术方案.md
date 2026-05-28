@@ -2621,5 +2621,5 @@ EPUB = ZIP 压缩包，包含：
 | `database_helper.dart` | 添加 `close()` 方法，防止数据库连接泄漏 |
 | `build.yml` | CI Release 触发条件修复：仅master → main+master |
 | `novel_memory.dart` | 缓存添加 5 分钟 TTL，数据变更后自动刷新 |
-| `export_page.dart` | ZipEncoder → ZipFileEncoder，流式写入减少内存占用 |
+| `export_page.dart` | 保留 ZipEncoder + Archive，确保 bytes 参数传递正确 |
 
