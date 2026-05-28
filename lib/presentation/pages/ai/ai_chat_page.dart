@@ -499,6 +499,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                 color: AppColors.primary,
                 onPressed: () => _showAttachMenu(context),
               ),
+              // 通话按钮（实时语音通话）
+              IconButton(
+                icon: Icon(Icons.phone_in_talk, color: Colors.grey[600], size: 24),
+                onPressed: _openVoiceCall,
+                tooltip: '语音通话',
+              ),
               // ⚡ 技能按钮
               IconButton(
                 icon: const Icon(Icons.auto_awesome, size: 24),
@@ -529,13 +535,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                   icon: const Icon(Icons.send, color: Colors.white, size: 18),
                   onPressed: _isLoading ? null : _sendMessage,
                 ),
-              ),
-              const SizedBox(width: 4),
-              // 通话按钮（实时语音通话）
-              IconButton(
-                icon: Icon(Icons.phone_in_talk, color: Colors.grey[600], size: 24),
-                onPressed: _openVoiceCall,
-                tooltip: '语音通话',
               ),
             ],
           ),

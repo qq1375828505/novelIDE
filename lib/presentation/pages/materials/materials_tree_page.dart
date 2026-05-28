@@ -102,7 +102,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
       body: FileTreeView(
         nodes: treeNodes,
         onNodeTap: (node) {
-          if (!node.isFolder && node.content != null) {
+          if (!node.isFolder) {
             _showContentPreview(node);
           }
         },
@@ -420,9 +420,15 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(node.name),
-        content: SingleChildScrollView(
-          child: Text(node.content ?? '无内容'),
+        title: Text(node.name, style: const TextStyle(fontSize: 16)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: SelectableText(
+              node.content?.isNotEmpty == true ? node.content! : '无内容',
+              style: const TextStyle(fontSize: 14, height: 1.6),
+            ),
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('关闭')),

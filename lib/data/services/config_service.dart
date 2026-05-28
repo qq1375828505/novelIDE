@@ -35,4 +35,8 @@ class ConfigService {
 
   static List<String> get recentNovelIds => _box.get('recentNovelIds', defaultValue: <String>[]).cast<String>();
   static set recentNovelIds(List<String> value) => _box.put('recentNovelIds', value);
+
+  // Voice config - 语音通话使用的AI模型ID（空=使用默认对话模型）
+  static String get voiceConfigId => _box.get('voiceConfigId', defaultValue: '');
+  static set voiceConfigId(String value) => _box.put('voiceConfigId', value);
 }

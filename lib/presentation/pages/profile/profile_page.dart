@@ -14,6 +14,7 @@ import 'package:novel_ide/data/services/model_test_service.dart';
 import 'package:novel_ide/presentation/pages/profile/app_config_page.dart';
 import 'package:novel_ide/presentation/pages/profile/user_memory_page.dart';
 import 'package:novel_ide/presentation/pages/profile/skill_manage_page.dart';
+import 'package:novel_ide/presentation/pages/profile/voice_config_page.dart';
 import 'package:novel_ide/presentation/widgets/top_snackbar.dart';
 
 /// 根据 URL 自动识别 API 协议类型
@@ -216,6 +217,16 @@ class ProfilePage extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const UserMemoryPage()));
+            },
+          ),
+          const SizedBox(height: 4),
+          ListTile(
+            leading: const Icon(Icons.record_voice_over, color: Colors.teal),
+            title: const Text('语音通话模型'),
+            subtitle: const Text('配置AI语音通话使用的模型（可与文字模型不同）'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const VoiceConfigPage()));
             },
           ),
           const SizedBox(height: 4),
