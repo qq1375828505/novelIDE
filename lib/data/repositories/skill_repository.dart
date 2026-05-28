@@ -24,8 +24,8 @@ class SkillRepository {
   Future<Map<String, bool>> _loadBuiltinEnabledState() async {
     final file = File(await _getEnabledStatePath());
     if (!await file.exists()) {
-      // 默认全部启用
-      return {for (final s in WritingSkill.builtInSkills) s.id: true};
+      // 默认全部关闭，用户主动开启
+      return {for (final s in WritingSkill.builtInSkills) s.id: false};
     }
     final content = await file.readAsString();
     return Map<String, bool>.from(jsonDecode(content) as Map);

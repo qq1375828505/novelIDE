@@ -261,58 +261,44 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         await _compactMessages(config);
       }
 
-      // Check if we have a novel selected for Agent mode
+      // 始终使用 Agent 模式（带工具能力），不再依赖是否选中小说
       final novel = ref.read(selectedNovelProvider);
+      final agent = WorkspaceAgent();
       if (novel != null) {
-        // Agent mode with tools
-        final agent = WorkspaceAgent();
+        // 有选中小说：注册全部工具（含小说相关操作）
         registerAllToolExecutors(agent: agent, novelId: novel.id, novelTitle: novel.title);
-
-        final effectiveSystemPrompt = '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext';
-
-        final response = await agent.chat(
-          config: config,
-          messages: _currentSession!.messages,
-          systemPrompt: effectiveSystemPrompt,
-        );
-
-        // Build response with tool call info
-        final buffer = StringBuffer();
-        if (response.toolResults.isNotEmpty) {
-          buffer.writeln('🔧 **工具调用：**\n');
-          for (final result in response.toolResults) {
-            final icon = result.success ? '✅' : '❌';
-            buffer.writeln('$icon ${result.toolName}：${result.message}');
-          }
-          buffer.writeln('\n---\n');
-        }
-        buffer.write(response.content);
-
-        setState(() {
-          _currentSession!.messages.add({'role': 'assistant', 'content': buffer.toString()});
-          if (matchedSkills.isNotEmpty) {
-            _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
-          }
-          _isLoading = false;
-        });
-      } else {
-        // Normal mode without tools
-        final aiService = ref.read(aiServiceProvider);
-        final aiText = await aiService.send(
-          config: config,
-          systemPrompt: '$systemPrompt\n\n$userMemoryContext',
-          userMessage: text,
-          taskType: 'chat',
-        );
-
-        setState(() {
-          _currentSession!.messages.add({'role': 'assistant', 'content': aiText});
-          if (matchedSkills.isNotEmpty) {
-            _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
-          }
-          _isLoading = false;
-        });
       }
+      // 没有选中小说时，Agent 仍可使用通用工具（如配置管理等）
+
+      final effectiveSystemPrompt = novel != null
+          ? '$systemPrompt\n\n小说记忆文件（当前状态）：\n$memoryContext$userMemoryContext'
+          : '$systemPrompt\n\n$userMemoryContext';
+
+      final response = await agent.chat(
+        config: config,
+        messages: _currentSession!.messages,
+        systemPrompt: effectiveSystemPrompt,
+      );
+
+      // Build response with tool call info
+      final buffer = StringBuffer();
+      if (response.toolResults.isNotEmpty) {
+        buffer.writeln('🔧 **工具调用：**\n');
+        for (final result in response.toolResults) {
+          final icon = result.success ? '✅' : '❌';
+          buffer.writeln('$icon ${result.toolName}：${result.message}');
+        }
+        buffer.writeln('\n---\n');
+      }
+      buffer.write(response.content);
+
+      setState(() {
+        _currentSession!.messages.add({'role': 'assistant', 'content': buffer.toString()});
+        if (matchedSkills.isNotEmpty) {
+          _skillMatches[_currentSession!.messages.length - 1] = matchedSkills;
+        }
+        _isLoading = false;
+      });
       _scrollToBottom();
     } catch (e) {
       setState(() {
