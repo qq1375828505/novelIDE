@@ -9,7 +9,6 @@ import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
 import 'package:novel_ide/presentation/pages/works/novel_import_dialog.dart';
 import 'package:novel_ide/presentation/pages/works/export_page.dart';
 import 'package:novel_ide/core/router.dart';
-import 'package:novel_ide/data/repositories/material_repository.dart';
 
 class NovelDetailPage extends ConsumerStatefulWidget {
   final Novel novel;
@@ -124,7 +123,7 @@ class _NovelDetailPageState extends ConsumerState<NovelDetailPage>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => EditorPage(novelId: novel.id, chapterId: latest.id),
+                      builder: (_) => EditorPage(novelId: widget.novel.id, chapterId: latest.id),
                     ),
                   );
                 },
@@ -243,7 +242,7 @@ void _showRenameVolumeDialog(BuildContext context, WidgetRef ref, Volume volume,
             if (ctrl.text.trim().isEmpty) return;
             final updated = volume.copyWith(title: ctrl.text.trim());
             await ref.read(volumeRepoProvider).updateVolume(updated);
-            ref.invalidate(volumesProvider(widget.novel.id));
+            ref.invalidate(volumesProvider(novel.id));
             if (ctx.mounted) Navigator.pop(ctx);
           },
           child: const Text('确定'),
@@ -330,8 +329,8 @@ class _ChapterTreeView extends ConsumerWidget {
                                     await ref.read(chapterRepoProvider).deleteChapter(ch.id);
                                   }
                                   await ref.read(volumeRepoProvider).deleteVolume(volume.id);
-                                  ref.invalidate(volumesProvider(widget.novel.id));
-                                  ref.invalidate(chaptersProvider(widget.novel.id));
+                                  ref.invalidate(volumesProvider(novel.id));
+                                  ref.invalidate(chaptersProvider(novel.id));
                                 }
                               },
                             ),
@@ -438,7 +437,7 @@ class _ChapterTreeView extends ConsumerWidget {
                 title: ctrl.text.trim(),
                 orderIndex: volChapters.length,
               );
-              ref.invalidate(chaptersProvider(widget.novel.id));
+              ref.invalidate(chaptersProvider(novel.id));
               if (context.mounted) {
                 Navigator.pop(context);
                 ref.read(selectedChapterProvider.notifier).state = chapter;
@@ -566,7 +565,7 @@ class _ChapterTile extends ConsumerWidget {
                       );
                       if (confirm == true) {
                         await ref.read(chapterRepoProvider).deleteChapter(chapter.id);
-                        ref.invalidate(chaptersProvider(widget.novel.id));
+                        ref.invalidate(chaptersProvider(novel.id));
                       }
                     },
                   ),
