@@ -18,6 +18,8 @@ import 'package:novel_ide/presentation/pages/profile/voice_config_page.dart';
 import 'package:novel_ide/presentation/widgets/top_snackbar.dart';
 import 'package:novel_ide/data/services/default_config_service.dart';
 import 'package:novel_ide/data/services/announcement_service.dart';
+import 'package:novel_ide/presentation/pages/profile/ai_config_list_page.dart';
+import 'package:novel_ide/data/services/backup_service.dart';
 
 /// 根据 URL 自动识别 API 协议类型
 /// - URL 包含 anthropic / claude → Anthropic 协议
@@ -203,25 +205,19 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const Divider(),
-          _SectionHeader(title: 'AI 模型配置', onAdd: () => _showAddAiConfigDialog(context, ref)),
-          if (configs.isEmpty)
-            ListTile(
-              leading: const Icon(Icons.smart_toy_outlined, color: Colors.grey),
-              title: Text('未配置AI模型', style: TextStyle(color: Colors.grey[500])),
-              subtitle: const Text('点击右上角 + 添加模型'),
-              onTap: () => _showAddAiConfigDialog(context, ref),
-            )
-          else
-            ...configs.map((config) => _AiConfigTile(config: config)),
-          // 添加所有智谱AI免费模型
-          if (!configs.any((c) => c.name.contains('智谱AI')))
-            ListTile(
-              leading: const Icon(Icons.add_circle, color: Colors.green),
-              title: const Text('添加智谱AI所有免费模型'),
-              subtitle: const Text('GLM-4.7-Flash、多模态、视觉等5个模型'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _addAllZhipuFreeModels(context, ref),
-            ),
+          _SectionHeader(title: 'AI 模型配置'),
+          Consumer(
+            builder: (context, ref, _) {
+              final config = ref.watch(selectedAiConfigProvider);
+              return ListTile(
+                leading: const Icon(Icons.smart_toy_outlined),
+                title: Text(config?.name ?? '未选择模型'),
+                subtitle: Text(config?.modelName ?? '点击配置AI模型'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiConfigListPage())),
+              );
+            },
+          ),
           const Divider(),
 
           _SectionHeader(title: 'AI 写作'),
@@ -372,9 +368,22 @@ class ProfilePage extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.backup),
             title: const Text('备份所有作品'),
-            subtitle: const Text('导出为 .novelpack 压缩包'),
+            subtitle: const Text('导出为 .zip 压缩包'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () async {
+              final path = await BackupService.backup();
+              if (context.mounted) {
+                if (path != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('备份成功：$path'), backgroundColor: Colors.green),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('备份失败或已取消'), backgroundColor: Colors.orange),
+                  );
+                }
+              }
+            },
           ),
           ListTile(
             leading: const Icon(Icons.restore),

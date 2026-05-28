@@ -8,6 +8,13 @@ import 'package:archive/archive.dart';
 class LocalFileDataSource {
   static final _uuid = Uuid();
 
+  /// 获取基础目录（NovelProjects 的父目录）
+  /// 用于备份服务等需要访问根目录的场景
+  Future<Directory> getBaseDir() async {
+    final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    return dir;
+  }
+
   /// 根目录：使用外部存储公共持久化目录，升级/卸载不丢失
   /// Android: /storage/emulated/0/Android/data/{package}/files/NovelProjects/
   /// 使用 getExternalStorageDirectory() 确保数据持久化
