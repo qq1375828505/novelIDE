@@ -256,8 +256,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         userMemoryContext = await UserMemory.getForAiContext();
       } catch (_) {}
 
-      // Auto-compact if too many messages (>20 pairs = 40 messages)
-      if (_currentSession!.messages.length > 40) {
+      // Auto-compact if too many messages (>300 pairs = 600 messages)
+      if (_currentSession!.messages.length > 600) {
         await _compactMessages(config);
       }
 
@@ -306,13 +306,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
           _isLoading = false;
         });
       } else {
-        // 普通模式：闲聊、简单问答（省 token，不发工具定义）
-        final aiService = ref.read(aiServiceProvider);
-        final aiText = await aiService.send(
+        // 普通模式：闲聊、简单问答（使用chatLite，不传工具定义，省token）
+        final agent = WorkspaceAgent();
+        final aiText = await agent.chatLite(
           config: config,
+          messages: _currentSession!.messages,
           systemPrompt: '$systemPrompt\n\n$userMemoryContext',
-          userMessage: text,
-          taskType: 'chat',
         );
 
         setState(() {

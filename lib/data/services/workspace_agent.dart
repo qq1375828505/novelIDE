@@ -7,11 +7,13 @@ class AgentTool {
   final String name;
   final String description;
   final Map<String, String> parameters;
+  final String category; // 工具分类，用于按需加载
 
   const AgentTool({
     required this.name,
     required this.description,
     this.parameters = const {},
+    this.category = 'general',
   });
 
   Map<String, dynamic> toOpenAiFormat() {
@@ -48,264 +50,79 @@ class ToolResult {
 /// Agent工具执行器接口
 typedef ToolExecutor = Future<ToolResult> Function(Map<String, dynamic> args);
 
-/// Workspace Agent - 全能AI助手
-/// 支持function calling，能操作资料库、编辑章节等
+/// 工具分类常量
+class ToolCategories {
+  static const String read = 'read';           // 读取类
+  static const String write = 'write';          // 写入类
+  static const String edit = 'edit';            // 编辑类
+  static const String analyze = 'analyze';      // 分析类
+  static const String agent = 'agent';          // 子代理
+  static const String skill = 'skill';          // 技能
+  static const String config = 'config';        // 配置管理
+  static const String project = 'project';      // 项目管理
+  static const String editor = 'editor';        // 编辑器
+}
+
+/// Workspace Agent - AI IDE 核心协调层
+/// 架构：主对话轻量 → 按需加载工具 → 独立执行 → 结果回传
 class WorkspaceAgent {
   final AiService _aiService = AiService();
 
-  /// 所有可用工具
+  /// 所有可用工具（按分类组织）
   static final List<AgentTool> tools = [
     // ====== 读取类工具 ======
-    AgentTool(
-      name: 'get_novel_info',
-      description: '获取当前小说的基本信息，包括标题、简介、章节数等',
-    ),
-    AgentTool(
-      name: 'get_characters',
-      description: '获取小说的所有角色列表，包括名称、定位、描述',
-    ),
-    AgentTool(
-      name: 'get_settings',
-      description: '获取小说的所有设定卡，包括世界观、战力体系等',
-    ),
-    AgentTool(
-      name: 'get_locations',
-      description: '获取小说的所有地点',
-    ),
-    AgentTool(
-      name: 'get_factions',
-      description: '获取小说的所有势力/组织',
-    ),
-    AgentTool(
-      name: 'get_items',
-      description: '获取小说的所有道具/物品',
-    ),
-    AgentTool(
-      name: 'get_hooks',
-      description: '获取小说的所有伏笔，包括状态（已埋/已收/闲置）',
-    ),
-    AgentTool(
-      name: 'get_references',
-      description: '获取小说的所有参考资料',
-    ),
-    AgentTool(
-      name: 'get_chapters',
-      description: '获取小说的章节列表，包括标题和字数',
-    ),
-    AgentTool(
-      name: 'get_chapter_content',
-      description: '获取指定章节的内容',
-      parameters: {
-        'chapter_title': '章节标题',
-      },
-    ),
-    AgentTool(
-      name: 'get_memory',
-      description: '获取小说的记忆包内容（AI自动生成的小说状态摘要）',
-    ),
+    AgentTool(name: 'get_novel_info', description: '获取当前小说的基本信息', category: ToolCategories.read),
+    AgentTool(name: 'get_characters', description: '获取小说的所有角色列表', category: ToolCategories.read),
+    AgentTool(name: 'get_settings', description: '获取小说的所有设定卡', category: ToolCategories.read),
+    AgentTool(name: 'get_locations', description: '获取小说的所有地点', category: ToolCategories.read),
+    AgentTool(name: 'get_factions', description: '获取小说的所有势力/组织', category: ToolCategories.read),
+    AgentTool(name: 'get_items', description: '获取小说的所有道具/物品', category: ToolCategories.read),
+    AgentTool(name: 'get_hooks', description: '获取小说的所有伏笔', category: ToolCategories.read),
+    AgentTool(name: 'get_references', description: '获取小说的所有参考资料', category: ToolCategories.read),
+    AgentTool(name: 'get_chapters', description: '获取小说的章节列表', category: ToolCategories.read),
+    AgentTool(name: 'get_chapter_content', description: '获取指定章节的内容', parameters: {'chapter_title': '章节标题'}, category: ToolCategories.read),
+    AgentTool(name: 'get_memory', description: '获取小说的记忆包内容', category: ToolCategories.read),
 
     // ====== 写入类工具 ======
-    AgentTool(
-      name: 'add_character',
-      description: '添加一个新角色到资料库',
-      parameters: {
-        'name': '角色名称',
-        'role': '角色定位（如：主角/反派/配角）',
-        'description': '角色描述（外貌、性格、背景等）',
-      },
-    ),
-    AgentTool(
-      name: 'add_setting',
-      description: '添加一个新设定到资料库',
-      parameters: {
-        'name': '设定名称',
-        'category': '分类（如：世界观/战力/势力）',
-        'description': '设定描述',
-      },
-    ),
-    AgentTool(
-      name: 'add_location',
-      description: '添加一个新地点到资料库',
-      parameters: {
-        'name': '地点名称',
-        'category': '分类（如：宗门/城市/秘境）',
-        'description': '地点描述',
-      },
-    ),
-    AgentTool(
-      name: 'add_faction',
-      description: '添加一个新势力/组织到资料库',
-      parameters: {
-        'name': '势力名称',
-        'category': '分类（如：正道/魔道/中立）',
-        'description': '势力描述',
-        'leader': '首领名称（可选）',
-      },
-    ),
-    AgentTool(
-      name: 'add_item',
-      description: '添加一个新道具/物品到资料库',
-      parameters: {
-        'name': '道具名称',
-        'category': '分类（如：武器/丹药/法宝）',
-        'description': '道具描述',
-      },
-    ),
-    AgentTool(
-      name: 'add_hook',
-      description: '添加一个新伏笔',
-      parameters: {
-        'title': '伏笔标题',
-        'description': '伏笔描述',
-      },
-    ),
-    AgentTool(
-      name: 'add_reference',
-      description: '添加一条参考资料',
-      parameters: {
-        'title': '参考标题',
-        'content': '参考内容',
-      },
-    ),
+    AgentTool(name: 'add_character', description: '添加新角色到资料库', parameters: {'name': '角色名称', 'role': '角色定位', 'description': '角色描述'}, category: ToolCategories.write),
+    AgentTool(name: 'add_setting', description: '添加新设定到资料库', parameters: {'name': '设定名称', 'category': '分类', 'description': '设定描述'}, category: ToolCategories.write),
+    AgentTool(name: 'add_location', description: '添加新地点到资料库', parameters: {'name': '地点名称', 'category': '分类', 'description': '地点描述'}, category: ToolCategories.write),
+    AgentTool(name: 'add_faction', description: '添加新势力到资料库', parameters: {'name': '势力名称', 'category': '分类', 'description': '势力描述', 'leader': '首领名称（可选）'}, category: ToolCategories.write),
+    AgentTool(name: 'add_item', description: '添加新道具到资料库', parameters: {'name': '道具名称', 'category': '分类', 'description': '道具描述'}, category: ToolCategories.write),
+    AgentTool(name: 'add_hook', description: '添加新伏笔', parameters: {'title': '伏笔标题', 'description': '伏笔描述'}, category: ToolCategories.write),
+    AgentTool(name: 'add_reference', description: '添加参考资料', parameters: {'title': '参考标题', 'content': '参考内容'}, category: ToolCategories.write),
 
     // ====== 编辑类工具 ======
-    AgentTool(
-      name: 'update_character',
-      description: '更新已有角色的信息',
-      parameters: {
-        'name': '要更新的角色名称',
-        'role': '新的角色定位（可选）',
-        'description': '新的角色描述（可选）',
-      },
-    ),
-    AgentTool(
-      name: 'update_hook_status',
-      description: '更新伏笔状态',
-      parameters: {
-        'title': '伏笔标题',
-        'status': '新状态：planted（已埋）/ resolved（已收）/ idle（闲置）',
-      },
-    ),
+    AgentTool(name: 'update_character', description: '更新已有角色信息', parameters: {'name': '角色名称', 'role': '新定位（可选）', 'description': '新描述（可选）'}, category: ToolCategories.edit),
+    AgentTool(name: 'update_hook_status', description: '更新伏笔状态', parameters: {'title': '伏笔标题', 'status': 'planted/resolved/idle'}, category: ToolCategories.edit),
 
     // ====== 分析类工具 ======
-    AgentTool(
-      name: 'analyze_plot_consistency',
-      description: '分析当前小说的剧情一致性，检查设定矛盾、角色行为不一致等问题',
-    ),
-    AgentTool(
-      name: 'check_idle_hooks',
-      description: '检查闲置伏笔（已埋但超过3章未回收的伏笔）',
-    ),
-    AgentTool(
-      name: 'generate_chapter_outline',
-      description: '根据当前剧情和设定，生成下一章的写作大纲',
-      parameters: {
-        'direction': '写作方向或要求（可选）',
-      },
-    ),
-    AgentTool(
-      name: 'character_relationship_map',
-      description: '分析并输出当前所有角色之间的关系图谱',
-    ),
+    AgentTool(name: 'analyze_plot_consistency', description: '分析剧情一致性', category: ToolCategories.analyze),
+    AgentTool(name: 'check_idle_hooks', description: '检查闲置伏笔', category: ToolCategories.analyze),
+    AgentTool(name: 'generate_chapter_outline', description: '生成下一章大纲', parameters: {'direction': '写作方向（可选）'}, category: ToolCategories.analyze),
+    AgentTool(name: 'character_relationship_map', description: '分析角色关系图谱', category: ToolCategories.analyze),
 
     // ====== 子代理工具 ======
-    AgentTool(
-      name: 'delegate_to_sub_agent',
-      description: '将复杂任务委派给子代理执行。子代理是专门处理特定任务的AI助手，可以独立思考和调用工具。',
-      parameters: {
-        'task_type': '子代理类型：outline_editor（大纲编辑）/ continuity_checker（连续性检查）/ character_analyst（角色分析师）/ pacing_advisor（节奏顾问）',
-        'instruction': '给子代理的具体指令',
-      },
-    ),
-    AgentTool(
-      name: 'run_workflow',
-      description: '触发一个预定义的自动化工作流',
-      parameters: {
-        'workflow_name': '工作流名称：post_chapter_check（章节检查）/ full_review（全文审查）/ outline_refresh（大纲刷新）',
-      },
-    ),
+    AgentTool(name: 'delegate_to_sub_agent', description: '委派任务给子代理', parameters: {'task_type': 'outline_editor/continuity_checker/character_analyst/pacing_advisor', 'instruction': '具体指令'}, category: ToolCategories.agent),
+    AgentTool(name: 'run_workflow', description: '触发自动化工作流', parameters: {'workflow_name': 'post_chapter_check/full_review/outline_refresh'}, category: ToolCategories.agent),
 
     // ====== Skill工具 ======
-    AgentTool(
-      name: 'get_skills',
-      description: '获取所有已启用的Skill，包括内置和自定义Skill',
-    ),
-    AgentTool(
-      name: 'add_skill',
-      description: '添加一个自定义Skill',
-      parameters: {
-        'name': 'Skill名称',
-        'category': '分类（如：剧情技巧/文笔技巧/角色技巧）',
-        'description': 'Skill描述',
-        'content': 'Skill详细内容',
-      },
-    ),
+    AgentTool(name: 'get_skills', description: '获取所有已启用的Skill', category: ToolCategories.skill),
+    AgentTool(name: 'add_skill', description: '添加自定义Skill', parameters: {'name': '名称', 'category': '分类', 'description': '描述', 'content': '内容'}, category: ToolCategories.skill),
 
     // ====== 系统配置工具 ======
-    AgentTool(
-      name: 'get_ai_configs',
-      description: '获取所有已配置的AI模型列表，包括文本模型和语音模型',
-    ),
-    AgentTool(
-      name: 'add_ai_config',
-      description: '添加一个新的AI模型配置（文本模型或语音模型）',
-      parameters: {
-        'name': '配置名称',
-        'api_url': 'API地址',
-        'model_name': '模型ID',
-        'model_type': '模型类型：text（文本）/ tts（语音合成）/ stt（语音识别）',
-        'api_key': 'API Key',
-      },
-    ),
-    AgentTool(
-      name: 'set_active_ai_config',
-      description: '设置当前使用的AI模型（文本模型或语音模型）',
-      parameters: {
-        'config_id': '配置ID',
-        'purpose': '用途：text（文本对话）/ voice（语音通话）',
-      },
-    ),
+    AgentTool(name: 'get_ai_configs', description: '获取所有AI模型配置', category: ToolCategories.config),
+    AgentTool(name: 'add_ai_config', description: '添加AI模型配置', parameters: {'name': '名称', 'api_url': 'API地址', 'model_name': '模型ID', 'model_type': 'text/tts/stt', 'api_key': 'API Key'}, category: ToolCategories.config),
+    AgentTool(name: 'set_active_ai_config', description: '设置当前使用的AI模型', parameters: {'config_id': '配置ID', 'purpose': 'text/voice'}, category: ToolCategories.config),
 
     // ====== 项目管理工具 ======
-    AgentTool(
-      name: 'list_novels',
-      description: '获取所有小说项目列表',
-    ),
-    AgentTool(
-      name: 'create_novel',
-      description: '创建一个新的小说项目',
-      parameters: {
-        'title': '小说标题',
-        'genre': '类型（如：玄幻/都市/言情）',
-        'description': '简介描述',
-      },
-    ),
-    AgentTool(
-      name: 'switch_novel',
-      description: '切换当前选中的小说项目',
-      parameters: {
-        'novel_id': '小说ID',
-      },
-    ),
+    AgentTool(name: 'list_novels', description: '获取小说项目列表', category: ToolCategories.project),
+    AgentTool(name: 'create_novel', description: '创建新小说项目', parameters: {'title': '标题', 'genre': '类型', 'description': '简介'}, category: ToolCategories.project),
+    AgentTool(name: 'switch_novel', description: '切换当前小说项目', parameters: {'novel_id': '小说ID'}, category: ToolCategories.project),
 
     // ====== 编辑器工具 ======
-    AgentTool(
-      name: 'write_chapter_content',
-      description: '将内容写入指定章节（覆盖原有内容）',
-      parameters: {
-        'chapter_id': '章节ID',
-        'content': '章节正文内容（Markdown格式）',
-      },
-    ),
-    AgentTool(
-      name: 'create_chapter',
-      description: '在指定卷下创建新章节',
-      parameters: {
-        'volume_id': '卷ID',
-        'title': '章节标题',
-        'content': '章节正文内容（可选）',
-      },
-    ),
+    AgentTool(name: 'write_chapter_content', description: '写入章节内容', parameters: {'chapter_id': '章节ID', 'content': '正文内容'}, category: ToolCategories.editor),
+    AgentTool(name: 'create_chapter', description: '创建新章节', parameters: {'volume_id': '卷ID', 'title': '章节标题', 'content': '正文（可选）'}, category: ToolCategories.editor),
   ];
 
   /// 工具执行器映射
@@ -319,7 +136,26 @@ class WorkspaceAgent {
   /// 获取工具执行器
   ToolExecutor? getExecutor(String toolName) => _executors[toolName];
 
-  /// 发送Agent请求（带function calling）
+  /// 获取已注册工具的分类列表
+  Set<String> get registeredCategories {
+    final cats = <String>{};
+    for (final name in _executors.keys) {
+      final tool = tools.where((t) => t.name == name).firstOrNull;
+      if (tool != null) cats.add(tool.category);
+    }
+    return cats;
+  }
+
+  // ========== 核心架构：轻量主对话 + 按需工具调度 ==========
+
+  /// 发送Agent请求（轻量架构）
+  ///
+  /// 架构流程：
+  /// 1. 主对话请求（轻量，只传对话历史 + 工具摘要列表，不传完整工具定义）
+  /// 2. AI返回工具调用意图
+  /// 3. 独立执行工具（不占用对话payload）
+  /// 4. 将工具结果摘要回传对话
+  /// 5. AI根据结果生成最终回复
   Future<AgentResponse> chat({
     required AiConfig config,
     required List<Map<String, String>> messages,
@@ -328,6 +164,7 @@ class WorkspaceAgent {
   }) async {
     final effectiveSystemPrompt = systemPrompt ?? _defaultSystemPrompt;
 
+    // 构建轻量消息列表
     List<Map<String, dynamic>> apiMessages = [
       {'role': 'system', 'content': effectiveSystemPrompt},
       ...messages.map((m) => {'role': m['role'], 'content': m['content']}).toList(),
@@ -337,10 +174,8 @@ class WorkspaceAgent {
     final toolResults = <ToolResult>[];
 
     for (int round = 0; round < maxToolRounds; round++) {
-      // 构建请求
-      final availableTools = _executors.isNotEmpty
-          ? tools.where((t) => _executors.containsKey(t.name)).toList()
-          : <AgentTool>[];
+      // 只传已注册工具的定义（按需，不是全部）
+      final availableTools = _getRegisteredTools();
 
       final response = await _aiService.chatWithTools(
         config: config,
@@ -364,7 +199,7 @@ class WorkspaceAgent {
           }).toList(),
         });
 
-        // 执行每个工具
+        // 独立执行每个工具（不占用对话payload）
         for (final tc in response.toolCalls!) {
           toolCalls[tc.functionName] = tc.arguments is String ? tc.arguments : jsonEncode(tc.arguments);
           final executor = _executors[tc.functionName];
@@ -376,11 +211,11 @@ class WorkspaceAgent {
               final result = await executor(args);
               toolResults.add(result);
 
-              // 添加工具结果
+              // 工具结果摘要回传（截断过长内容，避免payload膨胀）
               apiMessages.add({
                 'role': 'tool',
                 'tool_call_id': tc.id,
-                'content': result.message,
+                'content': _summarizeToolResult(result),
               });
             } catch (e) {
               toolResults.add(ToolResult(
@@ -414,7 +249,40 @@ class WorkspaceAgent {
     );
   }
 
-  static const String _defaultSystemPrompt = '''你是一个全能AI写作助手（Workspace Agent），深度参与小说创作。
+  /// 获取已注册工具的OpenAI格式定义（只传已注册的，不是全部）
+  List<Map<String, dynamic>> _getRegisteredTools() {
+    return tools
+        .where((t) => _executors.containsKey(t.name))
+        .map((t) => t.toOpenAiFormat())
+        .toList();
+  }
+
+  /// 工具结果摘要（截断过长内容，避免payload膨胀）
+  String _summarizeToolResult(ToolResult result) {
+    final content = result.message;
+    if (content.length <= 500) return content;
+    // 超过500字时截断，保留开头和结尾
+    return '${content.substring(0, 300)}\n...（省略${content.length - 500}字）...\n${content.substring(content.length - 200)}';
+  }
+
+  /// 轻量模式：只发对话，不传工具定义
+  /// 用于普通闲聊场景，完全不占用工具payload
+  Future<String> chatLite({
+    required AiConfig config,
+    required List<Map<String, String>> messages,
+    String? systemPrompt,
+  }) async {
+    final effectiveSystemPrompt = systemPrompt ?? _defaultSystemPrompt;
+
+    return await _aiService.send(
+      config: config,
+      systemPrompt: effectiveSystemPrompt,
+      userMessage: messages.last['content'] ?? '',
+      taskType: 'chat',
+    );
+  }
+
+  static const String _defaultSystemPrompt = '''你是一个全能AI写作助手（Workspace Agent），是网文AI IDE的核心。
 
 你的能力：
 1. 读取小说的全部数据（角色、设定、地点、伏笔、章节、记忆包）
@@ -422,9 +290,13 @@ class WorkspaceAgent {
 3. 分析章节内容，给出写作建议
 4. 检查伏笔状态，提醒闲置伏笔
 5. 帮助构思剧情、生成大纲
+6. 管理AI模型配置
+7. 创建和管理小说项目
+8. 直接编辑和创建章节内容
 
 工作原则：
 - 主动分析小说状态，发现潜在问题
+- 需要操作时直接调用工具，不要让用户手动操作
 - 给出具体可操作的建议
 - 保持创作连贯性，参考已有设定
 - 用中文回复，语气友好专业''';

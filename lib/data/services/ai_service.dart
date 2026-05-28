@@ -9,6 +9,31 @@ class AiService {
   final Dio _dio = Dio();
   final CostTracker _costTracker = CostTracker();
 
+  AiService() {
+    // 添加重试拦截器：网络波动自动重试
+    _dio.interceptors.add(InterceptorsWrapper(
+      onError: (error, handler) async {
+        // 只对网络错误重试，不对4xx/5xx重试
+        if (error.type == DioExceptionType.connectionError ||
+            error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.sendTimeout) {
+          try {
+            // 最多重试2次，间隔递增
+            final retryCount = error.requestOptions.extra['retryCount'] as int? ?? 0;
+            if (retryCount < 2) {
+              final delay = Duration(seconds: (retryCount + 1) * 2);
+              await Future.delayed(delay);
+              error.requestOptions.extra['retryCount'] = retryCount + 1;
+              final response = await _dio.fetch(error.requestOptions);
+              return handler.resolve(response);
+            }
+          } catch (_) {}
+        }
+        handler.next(error);
+      },
+    ));
+  }
+
   /// 智能补全 API 地址
   /// 根据协议类型自动补全为完整路径
   String _normalizeApiUrl(String url, ApiProtocol protocol) {
