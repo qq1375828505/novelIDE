@@ -40,7 +40,10 @@ class AiService {
     try {
       final response = await _dio.post(
         normalizedUrl,
-        options: Options(headers: _buildHeaders(config)),
+        options: Options(
+          headers: _buildHeaders(config),
+          receiveTimeout: const Duration(seconds: 120),
+        ),
         data: _buildPayload(config, messages),
       );
 
@@ -59,6 +62,7 @@ class AiService {
       return content;
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
+      final respBody = e.response?.data?.toString() ?? '';
       if (statusCode == 401) {
         throw Exception('API Key 无效或认证失败 (401)，请检查API Key是否正确');
       }
@@ -74,7 +78,20 @@ class AiService {
       if (statusCode == 402) {
         throw Exception('API 余额不足 (402)，请充值后重试');
       }
-      throw Exception('请求失败: ${e.message}');
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.sendTimeout) {
+        throw Exception('连接超时，请检查网络或API地址');
+      }
+      if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception('服务器响应超时，可能是max_tokens过大或模型负载高');
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        throw Exception('无法连接到服务器，请检查API地址和网络');
+      }
+      // 尝试从response body提取更具体的错误信息
+      if (respBody.isNotEmpty && respBody.length < 300) {
+        throw Exception('请求失败 ($statusCode): $respBody');
+      }
+      throw Exception('请求失败: ${e.message ?? e.type.name}');
     }
   }
 
@@ -157,23 +174,27 @@ class AiService {
     String taskType = 'agent',
   }) async {
     final normalizedUrl = _normalizeApiUrl(config.apiUrl, config.protocol);
+    // 判断是否发送 tools（先尝试发送）
+    final bool shouldSendTools = config.protocol != ApiProtocol.anthropic
+        && tools != null && tools.isNotEmpty;
 
-    try {
-      final payload = {
+    Future<_ToolChatResponse> doRequest({required bool withTools}) async {
+      final payload = <String, dynamic>{
         'model': config.modelName,
         'messages': messages,
         'temperature': config.temperature,
         'max_tokens': config.maxTokens,
       };
-
-      // 只在OpenAI兼容协议下添加tools
-      if (config.protocol != ApiProtocol.anthropic && tools != null && tools.isNotEmpty) {
+      if (withTools) {
         payload['tools'] = tools;
       }
 
       final response = await _dio.post(
         normalizedUrl,
-        options: Options(headers: _buildHeaders(config)),
+        options: Options(
+          headers: _buildHeaders(config),
+          receiveTimeout: const Duration(seconds: 120),
+        ),
         data: payload,
       );
 
@@ -194,31 +215,51 @@ class AiService {
 
       // Parse tool_calls
       List<ToolCallInfo>? toolCalls;
-      final rawToolCalls = message?['tool_calls'];
-      if (rawToolCalls != null && rawToolCalls is List && rawToolCalls.isNotEmpty) {
-        toolCalls = rawToolCalls.map((tc) => ToolCallInfo(
-          id: tc['id'] as String? ?? '',
-          functionName: tc['function']?['name'] as String? ?? '',
-          arguments: tc['function']?['arguments'] ?? '{}',
-        )).toList();
+      if (withTools) {
+        final rawToolCalls = message?['tool_calls'];
+        if (rawToolCalls != null && rawToolCalls is List && rawToolCalls.isNotEmpty) {
+          toolCalls = rawToolCalls.map((tc) => ToolCallInfo(
+            id: tc['id'] as String? ?? '',
+            functionName: tc['function']?['name'] as String? ?? '',
+            arguments: tc['function']?['arguments'] ?? '{}',
+          )).toList();
+        }
       }
 
       return _ToolChatResponse(content: content, toolCalls: toolCalls);
+    }
+
+    try {
+      return await doRequest(withTools: shouldSendTools);
     } on DioException catch (e) {
+      // 如果带 tools 失败（MiMo等不支持tools的API），去掉 tools 重试
+      if (shouldSendTools && (e.response?.statusCode == 400 || e.response?.statusCode == 422)) {
+        try {
+          return await doRequest(withTools: false);
+        } catch (_) {
+          // 重试也失败，抛出原始错误
+        }
+      }
+
       final statusCode = e.response?.statusCode;
-      if (statusCode == 401) {
-        throw Exception('API Key 无效或认证失败 (401)');
+      final respBody = e.response?.data?.toString() ?? '';
+      if (statusCode == 401) throw Exception('API Key 无效或认证失败 (401)');
+      if (statusCode == 403) throw Exception('API Key 无权限访问该资源 (403)');
+      if (statusCode == 404) throw Exception('API地址错误 (404)');
+      if (statusCode == 429) throw Exception('请求频率超限 (429)，请稍后再试');
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.sendTimeout) {
+        throw Exception('连接超时，请检查网络或API地址');
       }
-      if (statusCode == 403) {
-        throw Exception('API Key 无权限访问该资源 (403)');
+      if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception('服务器响应超时，可能是max_tokens过大或模型负载高');
       }
-      if (statusCode == 404) {
-        throw Exception('API地址错误 (404)');
+      if (e.type == DioExceptionType.connectionError) {
+        throw Exception('无法连接到服务器，请检查API地址和网络');
       }
-      if (statusCode == 429) {
-        throw Exception('请求频率超限 (429)，请稍后再试');
+      if (respBody.isNotEmpty && respBody.length < 300) {
+        throw Exception('请求失败 ($statusCode): $respBody');
       }
-      throw Exception('请求失败: ${e.message}');
+      throw Exception('请求失败: ${e.message ?? e.type.name}');
     }
   }
 }

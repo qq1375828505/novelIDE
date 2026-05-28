@@ -531,16 +531,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                 ),
               ),
               const SizedBox(width: 4),
-              // 麦克风按钮（语音转文字）
-              IconButton(
-                icon: Icon(
-                  _isVoiceListening ? Icons.mic : Icons.mic_none,
-                  color: _isVoiceListening ? Colors.red : Colors.grey[600],
-                  size: 24,
-                ),
-                onPressed: _voiceInitialized ? _toggleVoiceInput : null,
-                tooltip: '语音输入',
-              ),
               // 通话按钮（实时语音通话）
               IconButton(
                 icon: Icon(Icons.phone_in_talk, color: Colors.grey[600], size: 24),

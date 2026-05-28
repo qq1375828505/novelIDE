@@ -7,6 +7,8 @@ import 'package:charset/charset.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
+import 'package:novel_ide/data/models/material_models.dart';
+import 'package:novel_ide/data/repositories/material_repository.dart';
 
 /// 导入内容类型
 enum ImportContentType {
@@ -251,6 +253,18 @@ class NovelImportService {
     required List<ParsedChapter> chapters,
     String? volumeId,
   }) async {
+    // 非章节类型 → 存入资料库
+    if (contentType != ImportContentType.chapters) {
+      return _importAsMaterial(
+        novelId: novelId,
+        filePath: filePath,
+        content: content,
+        contentType: contentType,
+        detectedTitle: chapters.first.title,
+      );
+    }
+
+    // 正文章节 → 存入章节表
     final db = await DatabaseHelper().database;
     final fs = LocalFileDataSource();
 
@@ -299,16 +313,10 @@ class NovelImportService {
           orderBy: 'order_index ASC');
       if (volumes.isEmpty) {
         actualVolumeId = _uuid.v4();
-        final volumeTitle = switch (contentType) {
-          ImportContentType.outline => '大纲',
-          ImportContentType.characters => '角色',
-          ImportContentType.settings => '设定',
-          ImportContentType.chapters => '正文',
-        };
         await db.insert('volumes', {
           'id': actualVolumeId,
           'novel_id': actualNovelId,
-          'title': volumeTitle,
+          'title': '正文',
           'order_index': 0,
           'summary': '',
           'created_at': DateTime.now().millisecondsSinceEpoch,
@@ -347,6 +355,49 @@ class NovelImportService {
       success: true,
       chapterCount: importedCount,
       totalWords: chapters.fold(0, (sum, ch) => sum + ch.content.length),
+      contentType: contentType,
+    );
+  }
+
+  /// 将非章节内容（大纲/角色/设定）存入资料库
+  Future<ImportResult> _importAsMaterial({
+    String? novelId,
+    required String filePath,
+    required String content,
+    required ImportContentType contentType,
+    required String detectedTitle,
+  }) async {
+    if (novelId == null || novelId.isEmpty) {
+      return ImportResult(success: false, error: '需要先选择作品才能导入资料');
+    }
+
+    final materialRepo = MaterialRepository();
+    final title = '$detectedTitle - ${p.basenameWithoutExtension(filePath)}';
+
+    switch (contentType) {
+      case ImportContentType.outline:
+      case ImportContentType.characters:
+      case ImportContentType.settings:
+        // 统一存为参考资料
+        final ref = ReferenceMaterial(
+          id: _uuid.v4(),
+          novelId: novelId,
+          title: title,
+          content: content.trim(),
+          source: '文件导入',
+        );
+        final existing = await materialRepo.getReferences(novelId);
+        existing.add(ref);
+        await materialRepo.saveReferences(novelId, existing);
+        break;
+      default:
+        break;
+    }
+
+    return ImportResult(
+      success: true,
+      chapterCount: 0,
+      totalWords: content.length,
       contentType: contentType,
     );
   }
