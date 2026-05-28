@@ -230,10 +230,13 @@ class _VoiceConfigPageState extends ConsumerState<VoiceConfigPage> {
                 await SecureStorageDataSource().writeApiKey(id, apiKeyCtrl.text.trim());
               }
 
+              // 重新加载配置列表，确保 API Key 从 SecureStorage 读取并合并
+              await loadAiConfigs(ref);
               // 选中这个模型
               ConfigService.voiceConfigId = id;
-              ref.read(selectedVoiceConfigProvider.notifier).state = newConfig;
-              ref.invalidate(aiConfigsProvider);
+              final updatedConfigs = ref.read(aiConfigsProvider);
+              final savedConfig = updatedConfigs.firstWhere((c) => c.id == id);
+              ref.read(selectedVoiceConfigProvider.notifier).state = savedConfig;
 
               Navigator.pop(ctx);
               if (mounted) {

@@ -149,12 +149,8 @@ void _showEditAiConfigDialog(BuildContext context, WidgetRef ref, AiConfig confi
                 await SecureStorageDataSource().writeApiKey(config.id, keyCtrl.text.trim());
               }
               await DatabaseHelper().insertAiConfig(DatabaseHelper().toDbMap(updatedConfig));
-              final currentList = ref.read(aiConfigsProvider);
-              final newList = currentList.map((c) => c.id == config.id ? updatedConfig : c).toList();
-              ref.read(aiConfigsProvider.notifier).state = newList;
-              if (ref.read(selectedAiConfigProvider)?.id == config.id) {
-                ref.read(selectedAiConfigProvider.notifier).state = updatedConfig;
-              }
+              // 重新加载配置列表，确保 API Key 从 SecureStorage 读取并合并
+                await loadAiConfigs(ref);
               if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('保存'),
@@ -639,9 +635,12 @@ class ProfilePage extends ConsumerWidget {
                   await SecureStorageDataSource().writeApiKey(config.id, keyCtrl.text.trim());
                 }
                 await DatabaseHelper().insertAiConfig(DatabaseHelper().toDbMap(config));
-                final currentList = ref.read(aiConfigsProvider);
-                ref.read(aiConfigsProvider.notifier).state = [...currentList, config];
-                ref.read(selectedAiConfigProvider.notifier).state = config;
+                // 重新加载配置列表，确保 API Key 从 SecureStorage 读取并合并
+                await loadAiConfigs(ref);
+                // 从重新加载的列表中找到刚才保存的配置
+                final updatedConfigs = ref.read(aiConfigsProvider);
+                final savedConfig = updatedConfigs.firstWhere((c) => c.id == config.id);
+                ref.read(selectedAiConfigProvider.notifier).state = savedConfig;
                 if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text('保存'),
