@@ -961,6 +961,7 @@ class _AiConfigTile extends ConsumerWidget {
               ],
               onSelected: (value) {
                 if (value == 'use') {
+                  ConfigService.aiConfigId = config.id;
                   ref.read(selectedAiConfigProvider.notifier).state = config;
                 } else if (value == 'delete') {
                   _showDeleteConfirm(context, ref, config);
@@ -972,6 +973,7 @@ class _AiConfigTile extends ConsumerWidget {
           ],
         ),
         onTap: isSelected ? null : () {
+          ConfigService.aiConfigId = config.id;
           ref.read(selectedAiConfigProvider.notifier).state = config;
         },
       ),

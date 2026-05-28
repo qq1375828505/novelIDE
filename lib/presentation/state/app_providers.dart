@@ -160,7 +160,15 @@ Future<void> loadAiConfigs(WidgetRef ref) async {
     configs.add(db.fromDbMap(row, apiKey));
   }
   ref.read(aiConfigsProvider.notifier).state = configs;
-  // Auto-select first text config if none selected
+  // 恢复用户上次选择的文本模型（持久化）
+  final savedAiId = ConfigService.aiConfigId;
+  if (savedAiId.isNotEmpty) {
+    final savedConfig = configs.where((c) => c.id == savedAiId).firstOrNull;
+    if (savedConfig != null) {
+      ref.read(selectedAiConfigProvider.notifier).state = savedConfig;
+    }
+  }
+  // 没有保存过选择时，自动选择第一个文本模型
   if (configs.isNotEmpty && ref.read(selectedAiConfigProvider) == null) {
     ref.read(selectedAiConfigProvider.notifier).state = configs.firstWhere(
       (c) => c.modelType == ModelType.text,
