@@ -172,9 +172,7 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
           children: [
             Switch(
               value: skill.isEnabled,
-              onChanged: skill.isBuiltIn
-                  ? null
-                  : (val) => _toggleSkill(skill, val),
+              onChanged: (val) => _toggleSkill(skill, val),
             ),
             if (!skill.isBuiltIn)
               PopupMenuButton<String>(
@@ -225,14 +223,14 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['md', 'txt', 'json'],
+        allowedExtensions: ['md', 'txt', 'json', 'wode'],
       );
       if (result == null || result.files.isEmpty) return;
 
       final file = File(result.files.first.path!);
       final content = await file.readAsString();
       final fileName = result.files.first.name;
-      final nameWithoutExt = fileName.replaceAll(RegExp(r'\.(md|txt|json)$'), '');
+      final nameWithoutExt = fileName.replaceAll(RegExp(r'\.(md|txt|json|wode)$'), '');
 
       // 尝试解析为JSON，否则作为纯文本处理
       Map<String, dynamic>? skillData;

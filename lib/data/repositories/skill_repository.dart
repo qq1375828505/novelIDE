@@ -15,16 +15,73 @@ class SkillRepository {
     return dir.path;
   }
 
+  Future<String> _getEnabledStatePath() async {
+    final dirPath = await _getSkillDir();
+    return p.join(dirPath, 'builtin_enabled.json');
+  }
+
+  /// 获取内置Skill的启用状态（持久化）
+  Future<Map<String, bool>> _loadBuiltinEnabledState() async {
+    final file = File(await _getEnabledStatePath());
+    if (!await file.exists()) {
+      // 默认全部启用
+      return {for (final s in WritingSkill.builtInSkills) s.id: true};
+    }
+    final content = await file.readAsString();
+    return Map<String, bool>.from(jsonDecode(content) as Map);
+  }
+
+  /// 保存内置Skill的启用状态
+  Future<void> _saveBuiltinEnabledState(Map<String, bool> state) async {
+    final file = File(await _getEnabledStatePath());
+    await file.writeAsString(jsonEncode(state));
+  }
+
   /// 获取所有技能（内置+自定义）
   Future<List<WritingSkill>> getAllSkills() async {
     final dirPath = await _getSkillDir();
     final file = File(p.join(dirPath, 'skills.json'));
-    if (!await file.exists()) return List.from(WritingSkill.builtInSkills);
+    if (!await file.exists()) {
+      // 没有自定义skill文件时，返回内置skill（应用持久化的启用状态）
+      final enabledState = await _loadBuiltinEnabledState();
+      return WritingSkill.builtInSkills.map((s) {
+        return WritingSkill(
+          id: s.id,
+          name: s.name,
+          category: s.category,
+          description: s.description,
+          content: s.content,
+          keywords: s.keywords,
+          isEnabled: enabledState[s.id] ?? true,
+          isBuiltIn: true,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        );
+      }).toList();
+    }
 
     final content = await file.readAsString();
     final list = jsonDecode(content) as List<dynamic>;
     final customSkills = list.map((e) => WritingSkill.fromJson(e as Map<String, dynamic>)).toList();
-    return [...WritingSkill.builtInSkills, ...customSkills];
+
+    // 应用持久化的内置skill启用状态
+    final enabledState = await _loadBuiltinEnabledState();
+    final builtinSkills = WritingSkill.builtInSkills.map((s) {
+      return WritingSkill(
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        description: s.description,
+        content: s.content,
+        keywords: s.keywords,
+        isEnabled: enabledState[s.id] ?? true,
+        isBuiltIn: true,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+      );
+    }).toList();
+
+    return [...builtinSkills, ...customSkills];
   }
 
   /// 获取自定义技能
@@ -52,13 +109,21 @@ class SkillRepository {
     await saveCustomSkills(skills);
   }
 
-  /// 更新自定义技能
+  /// 更新技能（支持内置Skill的启用状态切换）
   Future<void> updateSkill(WritingSkill skill) async {
-    final skills = await getCustomSkills();
-    final idx = skills.indexWhere((s) => s.id == skill.id);
-    if (idx >= 0) {
-      skills[idx] = skill;
-      await saveCustomSkills(skills);
+    if (skill.isBuiltIn) {
+      // 内置Skill：只持久化启用状态
+      final state = await _loadBuiltinEnabledState();
+      state[skill.id] = skill.isEnabled;
+      await _saveBuiltinEnabledState(state);
+    } else {
+      // 自定义Skill：完整更新
+      final skills = await getCustomSkills();
+      final idx = skills.indexWhere((s) => s.id == skill.id);
+      if (idx >= 0) {
+        skills[idx] = skill;
+        await saveCustomSkills(skills);
+      }
     }
   }
 
