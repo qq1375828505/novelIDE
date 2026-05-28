@@ -243,8 +243,7 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
       setState(() {
         _importPreview = preview;
         _isPreviewing = false;
-        _statusText = '识别结果：${preview.detectedType}（来源：${preview.matchSource}）
-${preview.chapters.length} 段内容，${preview.totalWords} 字';
+        _statusText = '识别结果：${preview.detectedType}（来源：${preview.matchSource}）\n${preview.chapters.length} 段内容，${preview.totalWords} 字';
       });
     } catch (e) {
       setState(() {
