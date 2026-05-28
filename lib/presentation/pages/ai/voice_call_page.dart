@@ -77,8 +77,11 @@ class _VoiceCallPageState extends ConsumerState<VoiceCallPage>
   /// 获取AI回复
   Future<void> _getAiResponse(String userMessage) async {
     if (!_isCallActive) return;
-    
-    final aiConfig = ref.read(selectedAiConfigProvider);
+
+    // 优先使用语音模型配置，兜底使用文本模型配置
+    final voiceConfig = ref.read(selectedVoiceConfigProvider);
+    final textConfig = ref.read(selectedAiConfigProvider);
+    final aiConfig = voiceConfig ?? textConfig;
     if (aiConfig == null) {
       setState(() {
         _transcript.add('🤖 错误：未配置AI模型，请在设置中添加');
@@ -141,9 +144,20 @@ class _VoiceCallPageState extends ConsumerState<VoiceCallPage>
     setState(() {
       _transcript.add('🤖 $text');
     });
+
+    // 等待 TTS 朗读完成后再继续监听
+    final completer = Completer<void>();
+    _voiceService.onSpeakingDone = () {
+      if (!completer.isCompleted) completer.complete();
+    };
     await _voiceService.speak(text);
-    // 朗读完毕后继续监听
-    await Future.delayed(const Duration(milliseconds: 500));
+
+    // 兜底：最多等待 30 秒（防止原生端回调丢失导致永久等待）
+    await completer.future.timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {},
+    );
+
     if (_isCallActive) {
       await _voiceService.startListening();
     }

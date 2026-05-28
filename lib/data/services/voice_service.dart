@@ -48,6 +48,14 @@ class VoiceService {
     // 初始化原生 TTS
     try {
       await _channel.invokeMethod('initTTS', {'locale': _localeId});
+      // 监听原生端朗读完成事件
+      _channel.setMethodCallHandler((call) async {
+        if (call.method == 'onSpeakingDone') {
+          _isSpeaking = false;
+          onSpeakingChanged?.call(false);
+          onSpeakingDone?.call();
+        }
+      });
     } catch (e) {
       debugPrint('TTS初始化失败: $e');
     }
@@ -93,7 +101,7 @@ class VoiceService {
     }
   }
 
-  /// 语音合成 - 朗读文字（通过原生 TTS）
+  /// 语音合成 - 朗读文字（通过原生 TTS），等待朗读完成
   Future<void> speak(String text) async {
     if (_isSpeaking) {
       await stopSpeaking();
@@ -102,12 +110,16 @@ class VoiceService {
     onSpeakingChanged?.call(true);
     try {
       await _channel.invokeMethod('speak', {'text': text});
+      // 等待原生端通知朗读完成
+      // 原生 TTS 的 UtteranceProgressListener 会在朗读完毕后通过 channel 回调
     } catch (e) {
       debugPrint('TTS朗读失败: $e');
     }
-    _isSpeaking = false;
-    onSpeakingChanged?.call(false);
+    // 注意：_isSpeaking 的重置由原生端通过 onSpeakingDone 回调处理
   }
+
+  /// 原生端朗读完成回调（由外部设置）
+  VoidCallback? onSpeakingDone;
 
   /// 停止朗读
   Future<void> stopSpeaking() async {

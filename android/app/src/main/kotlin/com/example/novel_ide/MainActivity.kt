@@ -87,6 +87,24 @@ class MainActivity : FlutterActivity() {
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build()
                 )
+                // 监听朗读完成事件，通知 Flutter 端
+                tts?.setOnUtteranceProgressListener(object : TextToSpeech.OnUtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) {}
+                    override fun onDone(utteranceId: String?) {
+                        runOnUiThread {
+                            try {
+                                channel.invokeMethod("onSpeakingDone", null)
+                            } catch (_: Exception) {}
+                        }
+                    }
+                    override fun onError(utteranceId: String?) {
+                        runOnUiThread {
+                            try {
+                                channel.invokeMethod("onSpeakingDone", null)
+                            } catch (_: Exception) {}
+                        }
+                    }
+                })
                 // 初始化音频路由
                 initAudioRoute()
                 runOnUiThread { result.success(true) }
