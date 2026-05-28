@@ -394,25 +394,52 @@ class _VoiceConfigPageState extends ConsumerState<VoiceConfigPage> {
         return;
       }
 
-      // 使用Dio直接发送HEAD请求测试连通性，不调用chat接口（TTS接口不支持chat）
+      // 使用Dio发送POST请求到 /v1/chat/completions 测试连通性
+      // MiMo等OpenAI兼容API需要通过chat端点测试
       final dio = Dio();
-      final response = await dio.head(
-        config.apiUrl,
+      final baseUrl = config.apiUrl.endsWith('/v1')
+          ? config.apiUrl
+          : '${config.apiUrl}/v1';
+      final response = await dio.post(
+        '$baseUrl/chat/completions',
+        data: {
+          'model': config.modelName,
+          'messages': [
+            {'role': 'user', 'content': '测试'}
+          ],
+          'max_tokens': 10,
+        },
         options: Options(
           headers: {
             'Authorization': 'Bearer $apiKey',
             'api-key': apiKey,
+            'Content-Type': 'application/json',
           },
           sendTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
+          validateStatus: (status) => status != null && status < 500,
         ),
       );
 
       if (mounted) Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('「${config.name}」连接成功 (HTTP ${response.statusCode})'), backgroundColor: Colors.green),
-        );
+        if (response.statusCode == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('「${config.name}」连接成功'), backgroundColor: Colors.green),
+          );
+        } else if (response.statusCode == 401) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('API Key 无效 (401)'), backgroundColor: Colors.red),
+          );
+        } else if (response.statusCode == 404) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('API端点不存在 (404)，请检查API地址'), backgroundColor: Colors.red),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('连接异常 (HTTP ${response.statusCode})'), backgroundColor: Colors.orange),
+          );
+        }
       }
     } on DioException catch (e) {
       if (mounted) Navigator.pop(context);
@@ -426,8 +453,7 @@ class _VoiceConfigPageState extends ConsumerState<VoiceConfigPage> {
       } else if (e.response?.statusCode == 403) {
         errorMsg = 'API Key 无权限 (403)';
       } else if (e.response?.statusCode == 404) {
-        // 404也说明服务器可达，只是端点不同
-        errorMsg = '服务器可达，但端点返回404（TTS接口可能不支持HEAD请求，这不影响正常使用）';
+        errorMsg = 'API端点不存在 (404)，请检查API地址';
       } else {
         errorMsg = '连接失败: ${e.message ?? e.type.name}';
       }
