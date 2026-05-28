@@ -78,6 +78,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
       _sessions.insert(0, session);
       _currentSession = session;
       _showHistory = false;
+      _skillMatches.clear();
     });
   }
 

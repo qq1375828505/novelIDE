@@ -250,6 +250,7 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
     final catCtrl = TextEditingController(text: skill?.category ?? '通用');
     final descCtrl = TextEditingController(text: skill?.description ?? '');
     final contentCtrl = TextEditingController(text: skill?.content ?? '');
+    final kwCtrl = TextEditingController(text: skill?.keywords.join('、') ?? '');
 
     showDialog(
       context: context,
@@ -264,6 +265,15 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
               TextField(controller: catCtrl, decoration: const InputDecoration(labelText: '分类')),
               const SizedBox(height: 12),
               TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述'), maxLines: 2),
+              const SizedBox(height: 12),
+              TextField(
+                controller: kwCtrl,
+                decoration: const InputDecoration(
+                  labelText: '匹配关键词（用顿号分隔）',
+                  hintText: '例如：伏笔、悬念、埋线',
+                  helperText: 'AI对话中出现这些词时自动触发此技能',
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: contentCtrl,
@@ -283,6 +293,7 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
                 skill.category = catCtrl.text.trim();
                 skill.description = descCtrl.text.trim();
                 skill.content = contentCtrl.text.trim();
+                skill.keywords = _parseKeywords(kwCtrl.text);
                 _repo.updateSkill(skill);
               } else {
                 final newSkill = _repo.createSkill(
@@ -290,6 +301,7 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
                   category: catCtrl.text.trim(),
                   description: descCtrl.text.trim(),
                   content: contentCtrl.text.trim(),
+                  keywords: _parseKeywords(kwCtrl.text),
                 );
                 _repo.addSkill(newSkill);
               }
@@ -301,5 +313,12 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
         ],
       ),
     );
+  }
+
+  List<String> _parseKeywords(String text) {
+    return text.split(RegExp(r'[、,，\s]+'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
   }
 }

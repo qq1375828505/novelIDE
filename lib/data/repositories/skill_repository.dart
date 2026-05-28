@@ -91,6 +91,7 @@ class SkillRepository {
     required String category,
     required String description,
     required String content,
+    List<String> keywords = const [],
   }) {
     return WritingSkill(
       id: 'skill_${_uuid.v4().substring(0, 8)}',
@@ -98,6 +99,7 @@ class SkillRepository {
       category: category,
       description: description,
       content: content,
+      keywords: keywords,
     );
   }
 }

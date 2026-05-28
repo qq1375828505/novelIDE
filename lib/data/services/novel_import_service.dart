@@ -16,12 +16,19 @@ enum ImportContentType {
   settings,   // 设定
 }
 
+/// 解析后的章节（公开，供 ImportPreview 使用）
+class ParsedChapter {
+  final String title;
+  final String content;
+  ParsedChapter({required this.title, required this.content});
+}
+
 /// 导入预览结果（确认前展示）
 class ImportPreview {
   final ImportContentType contentType;
-  final String detectedType;       // 识别到的类型描述，如"总纲"、"角色卡"
-  final String matchSource;        // 匹配来源：文件名/内容结构
-  final List<_ParsedChapter> chapters;
+  final String detectedType;
+  final String matchSource;
+  final List<ParsedChapter> chapters;
   final int totalWords;
 
   ImportPreview({
@@ -55,9 +62,7 @@ class NovelImportService {
   /// 预览导入：分析文件，返回识别结果（不写入数据库）
   Future<ImportPreview> previewImport(String filePath) async {
     final file = File(filePath);
-    if (!await file.exists()) {
-      throw Exception('文件不存在');
-    }
+    if (!await file.exists()) throw Exception('文件不存在');
 
     final ext = p.extension(filePath).toLowerCase();
     String content;
@@ -72,18 +77,17 @@ class NovelImportService {
         throw Exception('不支持的文件格式: $ext');
     }
 
-    if (content.trim().isEmpty) {
-      throw Exception('文件内容为空');
-    }
+    if (content.trim().isEmpty) throw Exception('文件内容为空');
 
-    // Step 1: 文件名语义分析
+    return _analyzeContent(filePath, content);
+  }
+
+  /// 分析内容类型和拆分章节（共用逻辑）
+  ImportPreview _analyzeContent(String filePath, String content) {
     final fileName = p.basenameWithoutExtension(filePath);
     final detectedByFilename = _detectByFilename(fileName);
-
-    // Step 2: 内容结构分析
     final detectedByContent = _detectByContent(content);
 
-    // Step 3: 决定最终类型（文件名优先于内容分析）
     ImportContentType contentType;
     String detectedType;
     String matchSource;
@@ -102,16 +106,14 @@ class NovelImportService {
       matchSource = '默认';
     }
 
-    // Step 4: 拆分内容
-    List<_ParsedChapter> chapters;
+    List<ParsedChapter> chapters;
     if (contentType == ImportContentType.chapters) {
       chapters = _splitChapters(content);
       if (chapters.isEmpty) {
-        chapters = [_ParsedChapter(title: '导入内容', content: content.trim())];
+        chapters = [ParsedChapter(title: '导入内容', content: content.trim())];
       }
     } else {
-      // 非章节类型，整块保存
-      chapters = [_ParsedChapter(title: detectedType, content: content.trim())];
+      chapters = [ParsedChapter(title: detectedType, content: content.trim())];
     }
 
     final totalWords = chapters.fold<int>(0, (sum, ch) => sum + ch.content.length);
@@ -146,7 +148,6 @@ class NovelImportService {
 
   /// 内容结构分析
   MapEntry<ImportContentType, String>? _detectByContent(String content) {
-    // 统计各类型标记出现次数
     int outlineScore = 0;
     int characterScore = 0;
     int settingScore = 0;
@@ -161,7 +162,6 @@ class NovelImportService {
       settingScore += kw.allMatches(content).length;
     }
 
-    // 阈值：至少出现3次
     if (characterScore >= 3 && characterScore > outlineScore && characterScore > settingScore) {
       return const MapEntry(ImportContentType.characters, '角色卡（内容结构识别）');
     }
@@ -171,17 +171,35 @@ class NovelImportService {
     if (outlineScore >= 3) {
       return const MapEntry(ImportContentType.outline, '大纲/总纲（内容结构识别）');
     }
-
     return null;
   }
 
-  /// 从文件导入小说，确认后调用写入数据库
+  /// 使用预览结果直接导入（避免重复读文件和检测）
+  Future<ImportResult> importWithPreview({
+    String? novelId,
+    String? novelTitle,
+    required String filePath,
+    required ImportPreview preview,
+    required String fileContent,
+    String? volumeId,
+  }) async {
+    return _doImport(
+      novelId: novelId,
+      novelTitle: novelTitle,
+      filePath: filePath,
+      content: fileContent,
+      contentType: preview.contentType,
+      chapters: preview.chapters,
+      volumeId: volumeId,
+    );
+  }
+
+  /// 从文件导入（独立使用，无预览时）
   Future<ImportResult> importFromFile({
     String? novelId,
     String? novelTitle,
     required String filePath,
     String? volumeId,
-    ImportContentType? overrideContentType, // 允许用户手动调整类型
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
@@ -210,22 +228,29 @@ class NovelImportService {
       return ImportResult(success: false, error: '文件内容为空');
     }
 
-    // 预览分析确定内容类型
-    ImportContentType contentType;
-    if (overrideContentType != null) {
-      contentType = overrideContentType;
-    } else {
-      final fileName = p.basenameWithoutExtension(filePath);
-      contentType = _detectByFilename(fileName)?.key ?? _detectByContent(content)?.key ?? ImportContentType.chapters;
-    }
+    final preview = _analyzeContent(filePath, content);
 
-    // 拆分章节
-    final chapters = _splitChapters(content);
-    if (chapters.isEmpty && contentType == ImportContentType.chapters) {
-      return ImportResult(success: false, error: '未能识别到章节内容');
-    }
+    return _doImport(
+      novelId: novelId,
+      novelTitle: novelTitle,
+      filePath: filePath,
+      content: content,
+      contentType: preview.contentType,
+      chapters: preview.chapters,
+      volumeId: volumeId,
+    );
+  }
 
-    // 写入数据库和文件系统
+  /// 实际写入数据库和文件系统
+  Future<ImportResult> _doImport({
+    String? novelId,
+    String? novelTitle,
+    required String filePath,
+    required String content,
+    required ImportContentType contentType,
+    required List<ParsedChapter> chapters,
+    String? volumeId,
+  }) async {
     final db = await DatabaseHelper().database;
     final fs = LocalFileDataSource();
 
@@ -257,7 +282,6 @@ class NovelImportService {
     final chaptersDir = Directory(p.join(projectPath, 'chapters'));
     if (!await chaptersDir.exists()) await chaptersDir.create(recursive: true);
 
-    // 获取当前最大 order_index
     final existing = await db.query('chapters',
         where: 'novel_id = ? AND volume_id = ?',
         whereArgs: [actualNovelId, volumeId ?? ''],
@@ -268,7 +292,6 @@ class NovelImportService {
       startIndex = (existing.first['order_index'] as int? ?? 0) + 1;
     }
 
-    // 创建或查找默认卷
     String? actualVolumeId = volumeId;
     if (actualVolumeId == null || actualVolumeId.isEmpty) {
       final volumes = await db.query('volumes',
@@ -364,9 +387,7 @@ class NovelImportService {
       }
     }
 
-    if (docXmlFile == null) {
-      throw Exception('无法找到 word/document.xml');
-    }
+    if (docXmlFile == null) throw Exception('无法找到 word/document.xml');
 
     final contentBytes = docXmlFile.content as List<int>;
     final xmlContent = utf8.decode(contentBytes, allowMalformed: true);
@@ -380,9 +401,9 @@ class NovelImportService {
   }
 
   /// 自动拆分章节
-  List<_ParsedChapter> _splitChapters(String content) {
+  List<ParsedChapter> _splitChapters(String content) {
     final lines = content.split('\n');
-    final chapters = <_ParsedChapter>[];
+    final chapters = <ParsedChapter>[];
     final currentContent = StringBuffer();
     String currentTitle = '';
     bool hasChapter = false;
@@ -396,7 +417,7 @@ class NovelImportService {
     void flushChapter() {
       final text = currentContent.toString().trim();
       if (text.isNotEmpty || hasChapter) {
-        chapters.add(_ParsedChapter(
+        chapters.add(ParsedChapter(
           title: currentTitle.isNotEmpty ? currentTitle : '未命名章节',
           content: text,
         ));
@@ -448,21 +469,11 @@ class NovelImportService {
     flushChapter();
 
     if (chapters.isEmpty && content.trim().isNotEmpty) {
-      chapters.add(_ParsedChapter(
-        title: '导入内容',
-        content: content.trim(),
-      ));
+      chapters.add(ParsedChapter(title: '导入内容', content: content.trim()));
     }
 
     return chapters;
   }
-}
-
-/// 解析后的章节
-class _ParsedChapter {
-  final String title;
-  final String content;
-  _ParsedChapter({required this.title, required this.content});
 }
 
 /// 导入结果

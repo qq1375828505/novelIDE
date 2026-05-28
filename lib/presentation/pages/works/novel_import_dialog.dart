@@ -34,6 +34,7 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
   double _progress = 0;
   ImportResult? _importResult;
   ImportPreview? _importPreview;
+  String? _cachedContent;
   AnalysisResult? _analysisResult;
 
   @override
@@ -242,6 +243,7 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
       final preview = await service.previewImport(_filePath!);
       setState(() {
         _importPreview = preview;
+        _cachedContent = null; // preview already read internally
         _isPreviewing = false;
         _statusText = '识别结果：${preview.detectedType}（来源：${preview.matchSource}）\n${preview.chapters.length} 段内容，${preview.totalWords} 字';
       });
@@ -261,6 +263,7 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
     });
 
     final service = NovelImportService();
+    // preview 和 import 共用 _analyzeContent，结果一致
     final result = await service.importFromFile(
       novelId: widget.novelId,
       novelTitle: widget.novelTitle,
