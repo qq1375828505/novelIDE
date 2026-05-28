@@ -217,7 +217,7 @@ class ProfilePage extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.add_circle, color: Colors.green),
               title: const Text('添加智谱AI所有免费模型'),
-              subtitle: const Text('GLM-4.7-Flash、多模态、AI绘画等7个模型'),
+              subtitle: const Text('GLM-4.7-Flash、多模态、视觉等5个模型'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _addAllZhipuFreeModels(context, ref),
             ),
@@ -471,17 +471,7 @@ class ProfilePage extends ConsumerWidget {
 
   /// 添加所有智谱AI免费模型
   Future<void> _addAllZhipuFreeModels(BuildContext context, WidgetRef ref) async {
-    final models = DefaultConfigService.getAllFreeModels();
-    int addedCount = 0;
-    
-    for (final model in models) {
-      try {
-        await DefaultConfigService.addExtraFreeModel(model['id']!);
-        addedCount++;
-      } catch (e) {
-        print('添加模型 ${model['name']} 失败: $e');
-      }
-    }
+    final addedCount = await DefaultConfigService.addAllFreeModels();
     
     // 刷新配置列表
     await loadAiConfigs(ref);
