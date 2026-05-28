@@ -39,6 +39,8 @@ dependencies:
   url_launcher: ^6.2.5
   docx_creator: ^1.2.7
 
+dependency_overrides:
+  image: ^4.8.0
 
 dev_dependencies:
   flutter_test:
