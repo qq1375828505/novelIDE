@@ -9,6 +9,7 @@ import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/config_service.dart';
 import 'package:novel_ide/data/services/connectivity_service.dart';
 import 'package:novel_ide/data/services/notification_service.dart';
+import 'package:novel_ide/data/services/default_config_service.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -16,6 +17,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await ConfigService.init();
+  
+  // 初始化默认AI配置（开箱即用）
+  await DefaultConfigService.initDefaultConfig();
+  
   ConnectivityService.startMonitoring();
   await NotificationService.init();
 
