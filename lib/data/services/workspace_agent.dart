@@ -281,10 +281,12 @@ class WorkspaceAgent {
   }) async {
     final effectiveSystemPrompt = systemPrompt ?? _defaultSystemPrompt;
 
+    final conversationText = messages.map((m) => '${m["role"]}: ${m["content"]}').join('\n\n');
+
     return await _aiService.send(
       config: config,
       systemPrompt: effectiveSystemPrompt,
-      userMessage: messages.last['content'] ?? '',
+      userMessage: conversationText,
       taskType: 'chat',
     );
   }

@@ -156,6 +156,19 @@ class AiConfigListPage extends ConsumerWidget {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () async {
+              try {
+                await DatabaseHelper().deleteAiConfig(config.id);
+                await SecureStorageDataSource().deleteApiKey(config.id);
+              } catch (e) {
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('删除失败: $e'), backgroundColor: Colors.red),
+                  );
+                }
+                return;
+              }
+              // 仅在数据库删除成功后更新内存状态
               final list = ref.read(aiConfigsProvider).where((c) => c.id != config.id).toList();
               ref.read(aiConfigsProvider.notifier).state = list;
               if (ref.read(selectedAiConfigProvider)?.id == config.id) {
@@ -167,8 +180,6 @@ class AiConfigListPage extends ConsumerWidget {
                   ref.read(selectedAiConfigProvider.notifier).state = null;
                 }
               }
-              await DatabaseHelper().deleteAiConfig(config.id);
-              await SecureStorageDataSource().deleteApiKey(config.id);
               if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('删除'),
@@ -189,57 +200,75 @@ class AiConfigListPage extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('添加自定义模型'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '配置名称', prefixIcon: Icon(Icons.label))),
-              const SizedBox(height: 12),
-              TextField(controller: urlCtrl, decoration: const InputDecoration(labelText: 'API 地址', prefixIcon: Icon(Icons.link))),
-              const SizedBox(height: 12),
-              TextField(controller: modelCtrl, decoration: const InputDecoration(labelText: '模型 ID', prefixIcon: Icon(Icons.memory))),
-              const SizedBox(height: 12),
-              TextField(controller: keyCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'API Key', prefixIcon: Icon(Icons.key))),
+      builder: (ctx) {
+        ApiProtocol selectedProtocol = ApiProtocol.openaiCompatible;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('添加自定义模型'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '配置名称', prefixIcon: Icon(Icons.label))),
+                  const SizedBox(height: 12),
+                  TextField(controller: urlCtrl, decoration: const InputDecoration(labelText: 'API 地址', prefixIcon: Icon(Icons.link))),
+                  const SizedBox(height: 12),
+                  TextField(controller: modelCtrl, decoration: const InputDecoration(labelText: '模型 ID', prefixIcon: Icon(Icons.memory))),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<ApiProtocol>(
+                    initialValue: selectedProtocol,
+                    decoration: const InputDecoration(labelText: 'API 协议', prefixIcon: Icon(Icons.swap_horiz)),
+                    items: const [
+                      DropdownMenuItem(value: ApiProtocol.openaiCompatible, child: Text('OpenAI兼容')),
+                      DropdownMenuItem(value: ApiProtocol.anthropic, child: Text('Anthropic')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setDialogState(() => selectedProtocol = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(controller: keyCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'API Key', prefixIcon: Icon(Icons.key))),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+              FilledButton(
+                onPressed: () async {
+                  final name = nameCtrl.text.trim();
+                  final url = urlCtrl.text.trim();
+                  final model = modelCtrl.text.trim();
+                  final key = keyCtrl.text.trim();
+                  if (name.isEmpty || url.isEmpty || model.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('名称、API地址、模型ID不能为空'), backgroundColor: Colors.orange));
+                    return;
+                  }
+                  final db = DatabaseHelper();
+                  final config = AiConfig(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    name: name,
+                    apiUrl: url,
+                    modelName: model,
+                    protocol: selectedProtocol,
+                  );
+                  await db.insertAiConfig(db.toDbMap(config));
+                  if (key.isNotEmpty) {
+                    await SecureStorageDataSource().writeApiKey(config.id, key);
+                  }
+                  await loadAiConfigs(ref);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('已添加「$name」'), backgroundColor: Colors.green),
+                    );
+                  }
+                },
+                child: const Text('添加'),
+              ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () async {
-              final name = nameCtrl.text.trim();
-              final url = urlCtrl.text.trim();
-              final model = modelCtrl.text.trim();
-              final key = keyCtrl.text.trim();
-              if (name.isEmpty || url.isEmpty || model.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('名称、API地址、模型ID不能为空'), backgroundColor: Colors.orange));
-                return;
-              }
-              final db = DatabaseHelper();
-              final config = AiConfig(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: name,
-                apiUrl: url,
-                modelName: model,
-              );
-              await db.insertAiConfig(db.toDbMap(config));
-              if (key.isNotEmpty) {
-                await SecureStorageDataSource().writeApiKey(config.id, key);
-              }
-              await loadAiConfigs(ref);
-              if (ctx.mounted) Navigator.pop(ctx);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('已添加「$name」'), backgroundColor: Colors.green),
-                );
-              }
-            },
-            child: const Text('添加'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

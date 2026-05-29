@@ -14,7 +14,7 @@ import 'package:novel_ide/data/services/workflow_engine.dart';
 import 'package:uuid/uuid.dart';
 
 /// 注册通用工具执行器（不需要小说上下文）
-void registerGeneralToolExecutors({required WorkspaceAgent agent}) {
+void registerGeneralToolExecutors({required WorkspaceAgent agent, Function(String)? onSwitchNovel}) {
   // 配置管理
   agent.registerExecutor('get_ai_configs', (args) async {
     try {
@@ -112,8 +112,14 @@ void registerGeneralToolExecutors({required WorkspaceAgent agent}) {
     try {
       final novelId = args['novel_id'] as String? ?? '';
       if (novelId.isEmpty) return ToolResult(toolName: 'switch_novel', success: false, message: '请提供小说ID');
-      // 注意：切换小说需要通过状态管理，这里只返回提示
-      return ToolResult(toolName: 'switch_novel', success: true, message: '已请求切换到小说 $novelId，请在作品列表中确认');
+      // 查找小说标题
+      final repo = NovelRepository();
+      final novels = await repo.getAllNovels();
+      final novel = novels.where((n) => n.id == novelId).firstOrNull;
+      if (novel == null) return ToolResult(toolName: 'switch_novel', success: false, message: '未找到ID为 $novelId 的小说');
+      // 通过回调切换选中的小说
+      onSwitchNovel?.call(novelId);
+      return ToolResult(toolName: 'switch_novel', success: true, message: '已切换到小说「${novel.title}」(ID: $novelId)');
     } catch (e) {
       return ToolResult(toolName: 'switch_novel', success: false, message: '切换失败: $e');
     }

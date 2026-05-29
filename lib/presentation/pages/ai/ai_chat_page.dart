@@ -271,7 +271,17 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
           registerAllToolExecutors(agent: agent, novelId: novel.id, novelTitle: novel.title);
         } else {
           // 没选中小说时，注册通用工具执行器（配置管理等）
-          registerGeneralToolExecutors(agent: agent);
+          registerGeneralToolExecutors(
+            agent: agent,
+            onSwitchNovel: (id) {
+              final novels = ref.read(novelsProvider).valueOrNull ?? [];
+              final novel = novels.where((n) => n.id == id).firstOrNull;
+              if (novel != null) {
+                ref.read(selectedNovelProvider.notifier).state = novel;
+                loadNovelMaterials(ref, id);
+              }
+            },
+          );
         }
 
         final effectiveSystemPrompt = novel != null

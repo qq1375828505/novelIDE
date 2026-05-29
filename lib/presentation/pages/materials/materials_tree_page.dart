@@ -762,32 +762,124 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
       case 'character':
         final list = await repo.getCharacters(novelId);
         final idx = list.indexWhere((c) => c.id == node.id);
-        if (idx >= 0) { list[idx].name = newName; list[idx].description = newContent; await repo.saveCharacters(novelId, list); }
+        if (idx >= 0) {
+          final old = list[idx];
+          final updated = Character(
+            id: old.id, novelId: novelId, name: newName,
+            role: old.role, description: newContent,
+            appearance: old.appearance, personality: old.personality,
+            background: old.background, tags: old.tags,
+            createdAt: old.createdAt,
+          );
+          final newList = List<Character>.from(list);
+          newList[idx] = updated;
+          await repo.saveCharacters(novelId, newList);
+          ref.read(charactersProvider(novelId).notifier).state = newList;
+        }
         break;
       case 'setting':
         final list = await repo.getSettingCards(novelId);
         final idx = list.indexWhere((s) => s.id == node.id);
-        if (idx >= 0) { list[idx].name = newName; list[idx].description = newContent; await repo.saveSettingCards(novelId, list); }
+        if (idx >= 0) {
+          final old = list[idx];
+          final updated = SettingCard(
+            id: old.id, novelId: novelId, name: newName,
+            category: old.category, description: newContent,
+            tags: old.tags, createdAt: old.createdAt,
+          );
+          final newList = List<SettingCard>.from(list);
+          newList[idx] = updated;
+          await repo.saveSettingCards(novelId, newList);
+          ref.read(settingCardsProvider(novelId).notifier).state = newList;
+        }
         break;
       case 'reference':
         final list = await repo.getReferences(novelId);
         final idx = list.indexWhere((r) => r.id == node.id);
-        if (idx >= 0) { list[idx].title = newName; list[idx].content = newContent; await repo.saveReferences(novelId, list); }
+        if (idx >= 0) {
+          final old = list[idx];
+          final updated = ReferenceMaterial(
+            id: old.id, novelId: novelId, title: newName,
+            content: newContent, source: old.source,
+            sourceUrl: old.sourceUrl, createdAt: old.createdAt,
+          );
+          final newList = List<ReferenceMaterial>.from(list);
+          newList[idx] = updated;
+          await repo.saveReferences(novelId, newList);
+          ref.read(referencesProvider(novelId).notifier).state = newList;
+        }
         break;
       case 'location':
         final list = await repo.getLocations(novelId);
         final idx = list.indexWhere((l) => l.id == node.id);
-        if (idx >= 0) { list[idx].name = newName; list[idx].description = newContent; await repo.saveLocations(novelId, list); }
+        if (idx >= 0) {
+          final old = list[idx];
+          final updated = Location(
+            id: old.id, novelId: novelId, name: newName,
+            category: old.category, description: newContent,
+            features: old.features, rules: old.rules,
+            tags: old.tags, createdAt: old.createdAt,
+          );
+          final newList = List<Location>.from(list);
+          newList[idx] = updated;
+          await repo.saveLocations(novelId, newList);
+          ref.read(locationsProvider(novelId).notifier).state = newList;
+        }
         break;
       case 'faction':
         final list = await repo.getFactions(novelId);
         final idx = list.indexWhere((f) => f.id == node.id);
-        if (idx >= 0) { list[idx].name = newName; list[idx].description = newContent; await repo.saveFactions(novelId, list); }
+        if (idx >= 0) {
+          final old = list[idx];
+          final updated = Faction(
+            id: old.id, novelId: novelId, name: newName,
+            category: old.category, description: newContent,
+            leader: old.leader, strength: old.strength,
+            members: old.members, tags: old.tags,
+            createdAt: old.createdAt,
+          );
+          final newList = List<Faction>.from(list);
+          newList[idx] = updated;
+          await repo.saveFactions(novelId, newList);
+          ref.read(factionsProvider(novelId).notifier).state = newList;
+        }
         break;
       case 'item':
         final list = await repo.getItems(novelId);
         final idx = list.indexWhere((i) => i.id == node.id);
-        if (idx >= 0) { list[idx].name = newName; list[idx].description = newContent; await repo.saveItems(novelId, list); }
+        if (idx >= 0) {
+          final old = list[idx];
+          final updated = Item(
+            id: old.id, novelId: novelId, name: newName,
+            category: old.category, description: newContent,
+            powerLevel: old.powerLevel, owner: old.owner,
+            isKeyItem: old.isKeyItem, tags: old.tags,
+            createdAt: old.createdAt,
+          );
+          final newList = List<Item>.from(list);
+          newList[idx] = updated;
+          await repo.saveItems(novelId, newList);
+          ref.read(itemsProvider(novelId).notifier).state = newList;
+        }
+        break;
+      case 'hook':
+        final list = await repo.getPlotHooks(novelId);
+        final idx = list.indexWhere((h) => h.id == node.id);
+        if (idx >= 0) {
+          final old = list[idx];
+          final updated = PlotHook(
+            id: old.id, novelId: novelId, title: newName,
+            description: newContent, isRevealed: old.isRevealed,
+            chapterPlantedId: old.chapterPlantedId,
+            chapterRevealedId: old.chapterRevealedId,
+            idleChapters: old.idleChapters,
+            createdAt: old.createdAt,
+          );
+          final newList = List<PlotHook>.from(list);
+          newList[idx] = updated;
+          await repo.savePlotHooks(novelId, newList);
+          ref.read(plotHooksProvider(novelId).notifier).state = newList;
+        }
         break;
     }
   }
