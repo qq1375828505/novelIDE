@@ -24,7 +24,6 @@ class _VoiceConfigPageState extends ConsumerState<VoiceConfigPage> {
     // 只筛选语音类型模型
     final voiceConfigs = allConfigs.where((c) => c.modelType == ModelType.tts || c.modelType == ModelType.stt).toList();
     final currentVoiceId = ConfigService.voiceConfigId;
-    final hasSelected = voiceConfigs.any((c) => c.id == currentVoiceId);
 
     return Scaffold(
       appBar: AppBar(

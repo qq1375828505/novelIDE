@@ -1,5 +1,4 @@
 import 'package:novel_ide/data/datasources/database_helper.dart';
-import 'package:intl/intl.dart';
 
 /// Track AI API usage costs locally.
 class CostTracker {
@@ -28,7 +27,6 @@ class CostTracker {
   /// Get today's usage summary.
   Future<CostSummary> getTodaySummary() async {
     final db = await _db.database;
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final startOfDay = DateTime.now().subtract(Duration(
       hours: DateTime.now().hour,
       minutes: DateTime.now().minute,

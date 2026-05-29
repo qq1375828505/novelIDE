@@ -161,8 +161,6 @@ class _CustomAgentsViewState extends ConsumerState<_CustomAgentsView> {
         };
       }
 
-      if (agentData == null) return;
-
       final agent = TomatoAgent(
         id: 'imported_${DateTime.now().millisecondsSinceEpoch}',
         name: agentData['name'] ?? agentData['title'] ?? fileName,

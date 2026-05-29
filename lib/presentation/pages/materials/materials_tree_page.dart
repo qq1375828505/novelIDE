@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/material_models.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
@@ -24,7 +23,6 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
   final Set<String> _expandedNodes = {'角色', '设定', '地点', '势力', '道具', '伏笔', '参考', '记忆'};
   // 记忆包内容
   String _memoryContent = '';
-  bool _isLoadingMemory = true;
   // AI大纲生成
   bool _isGeneratingOutline = false;
   List<OutlineNode> _outlineNodes = [];
@@ -43,7 +41,6 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     if (mounted) {
       setState(() {
         _memoryContent = content;
-        _isLoadingMemory = false;
       });
     }
   }

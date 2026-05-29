@@ -4,8 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
-import 'package:novel_ide/data/models/novel_model.dart';
-import 'package:novel_ide/data/models/tomato_preset_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/notification_service.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
@@ -15,11 +13,9 @@ import 'package:novel_ide/presentation/pages/ai/ai_drawer.dart';
 import 'package:novel_ide/presentation/pages/ai/search_drawer.dart';
 import 'package:novel_ide/presentation/pages/ai/setting_reminder_page.dart';
 import 'package:novel_ide/presentation/pages/ai/polish_engine_page.dart';
-import 'package:novel_ide/presentation/pages/tomato/style_selector_bar.dart';
 import 'package:novel_ide/presentation/pages/works/export_page.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:intl/intl.dart';
-import 'package:novel_ide/presentation/widgets/top_notification.dart';
 
 class EditorPage extends ConsumerStatefulWidget {
   final String novelId;
@@ -36,7 +32,6 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   final SpeechToText _speech = SpeechToText();
   Timer? _autoSaveTimer;
   Timer? _snapshotTimer;
-  bool _isListening = false;
   bool _showAiDrawer = false;
   bool _showSearchDrawer = false;
   bool _showFindBar = false;
@@ -45,7 +40,6 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   final List<String> _redoStack = [];
   final TextEditingController _findCtrl = TextEditingController();
   int _findIndex = 0;
-  List<TextSelection> _findResults = [];
   Chapter? _currentChapter;
 
   @override
@@ -194,34 +188,6 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     _snapshotTimer = Timer(const Duration(minutes: 3), () async {
       await ref.read(chapterRepoProvider).createSnapshot(widget.chapterId, _controller.text);
     });
-  }
-
-  void _toggleSpeech() async {
-    if (_isListening) {
-      await _speech.stop();
-      setState(() => _isListening = false);
-    } else {
-      final available = await _speech.initialize();
-      if (available) {
-        setState(() => _isListening = true);
-        await _speech.listen(
-          onResult: (result) {
-            final text = result.recognizedWords;
-            if (text.isNotEmpty) {
-              final current = _controller.text;
-              final selection = _controller.selection;
-              final newText = current.substring(0, selection.start) +
-                  text +
-                  current.substring(selection.end);
-              _controller.text = newText;
-              _controller.selection = TextSelection.collapsed(offset: selection.start + text.length);
-              _onTextChanged(newText);
-            }
-          },
-          localeId: 'zh_CN',
-        );
-      }
-    }
   }
 
   void _showSnapshots() async {

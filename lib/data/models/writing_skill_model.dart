@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// Skill模型
 class WritingSkill {

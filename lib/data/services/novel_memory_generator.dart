@@ -1,9 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:path/path.dart' as p;
 import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/repositories/material_repository.dart';
-import 'package:novel_ide/data/repositories/novel_repository.dart';
 import 'package:novel_ide/data/repositories/chapter_repository.dart';
 import 'package:novel_ide/data/repositories/volume_repository.dart';
 
@@ -14,7 +10,6 @@ class NovelMemoryGenerator {
   static Future<String> generate(String novelId, String novelTitle) async {
     final buf = StringBuffer();
     final db = await DatabaseHelper().database;
-    final novelRepo = NovelRepository();
     final chapterRepo = ChapterRepository();
     final volumeRepo = VolumeRepository();
     final matRepo = MaterialRepository();

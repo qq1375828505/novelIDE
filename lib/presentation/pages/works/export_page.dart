@@ -10,7 +10,6 @@ import 'package:archive/archive.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
-import 'package:novel_ide/data/repositories/material_repository.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
 import 'package:novel_ide/data/services/epub_export_service.dart';

@@ -1,4 +1,3 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:novel_ide/data/models/novel_model.dart';

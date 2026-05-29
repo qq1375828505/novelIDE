@@ -125,7 +125,6 @@ class ProofreadService {
 
   // ==================== 中英文标点混用检测 ====================
   static final RegExp _mixedPunctuation = RegExp(r'[一-鿿][,.!?;:)]');
-  static final RegExp _englishPuncAfterChinese = RegExp(r'[一-鿿][\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]');
 
   /// 校对单个文本
   List<ProofreadItem> proofreadText(String text, String chapterId, String chapterTitle) {

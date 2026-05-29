@@ -57,8 +57,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
   // 语音相关
   final VoiceService _voiceService = VoiceService();
-  bool _isVoiceListening = false;
-  bool _voiceInitialized = false;
 
   // 技能匹配记录：assistant消息索引 → 匹配到的技能列表
   final Map<int, List<WritingSkill>> _skillMatches = {};
@@ -128,7 +126,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Future<void> _initVoice() async {
-    _voiceInitialized = await _voiceService.init();
     if (mounted) setState(() {});
   }
 
@@ -212,7 +209,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
     // 检查是否需要触发 Workspace Agent
     final shouldTriggerAgent = detector.shouldTriggerWorkspaceAgent(text);
-    final intent = detector.extractIntent(text);
 
     setState(() {
       _currentSession!.messages.add({'role': 'user', 'content': _inputCtrl.text.trim()});
@@ -961,23 +957,6 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
     }
   }
 
-  /// 语音输入切换
-  void _toggleVoiceInput() async {
-    if (_isVoiceListening) {
-      await _voiceService.stopListening();
-      setState(() => _isVoiceListening = false);
-    } else {
-      setState(() => _isVoiceListening = true);
-      _voiceService.onResult = (text) {
-        setState(() => _inputCtrl.text = text);
-      };
-      _voiceService.onListeningEnd = () {
-        setState(() => _isVoiceListening = false);
-      };
-      await _voiceService.startListening();
-    }
-  }
-
   /// 打开语音通话
   void _openVoiceCall() async {
     final voiceConfig = ref.read(selectedVoiceConfigProvider);
@@ -991,7 +970,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
       return;
     }
 
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => VoiceCallPage(

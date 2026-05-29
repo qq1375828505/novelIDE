@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
-import 'package:novel_ide/presentation/widgets/top_notification.dart';
 
 /// 基于 WebView 的富文本编辑器页面
 /// 复用起点作家的 rich_editor.js + WeReadApi.js
@@ -32,7 +31,6 @@ class _RichEditorPageState extends ConsumerState<RichEditorPage> with WidgetsBin
   bool _isEditorReady = false;
   String _currentText = '';
   int _wordCount = 0;
-  String _savedContent = ''; // 保存的内容，用于恢复
 
   // 当前选区状态（从JS同步过来）
   bool _isBold = false;
@@ -44,7 +42,6 @@ class _RichEditorPageState extends ConsumerState<RichEditorPage> with WidgetsBin
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _savedContent = widget.initialContent;
     _initWebView();
   }
 
@@ -65,8 +62,7 @@ class _RichEditorPageState extends ConsumerState<RichEditorPage> with WidgetsBin
   Future<void> _saveCurrentContent() async {
     if (!_isEditorReady) return;
     try {
-      final result = await _webController.runJavaScriptReturningResult('document.body.innerText');
-      _savedContent = result.toString();
+      await _webController.runJavaScriptReturningResult('document.body.innerText');
     } catch (e) {
       debugPrint('Save content error: $e');
     }

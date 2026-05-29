@@ -1,10 +1,8 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/repositories/material_repository.dart';
-import 'package:novel_ide/data/models/chapter_model.dart';
 
 /// NovelMemory: The persistent "brain" of a novel project.
 /// Auto-updated on every save, loaded into AI context on every chat.

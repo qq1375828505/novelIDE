@@ -2,12 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:uuid/uuid.dart';
 import 'package:novel_ide/data/models/material_models.dart';
 
 class MaterialRepository {
-  static final _uuid = Uuid();
-
   Future<Directory> _getMaterialsDir(String novelId) async {
     final dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
     final matDir = Directory(p.join(dir.path, 'NovelProjects', '资料区'));

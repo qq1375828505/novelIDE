@@ -396,7 +396,7 @@ class _SkillManagePageState extends ConsumerState<SkillManagePage> {
             onPressed: () {
               if (nameCtrl.text.trim().isEmpty) return;
               if (isEdit) {
-                skill!.name = nameCtrl.text.trim();
+                skill.name = nameCtrl.text.trim();
                 skill.category = catCtrl.text.trim();
                 skill.description = descCtrl.text.trim();
                 skill.content = contentCtrl.text.trim();

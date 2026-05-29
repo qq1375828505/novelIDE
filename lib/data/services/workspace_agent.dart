@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:novel_ide/data/models/ai_config_model.dart';
-import 'package:novel_ide/data/services/ai_service.dart' show AiService, ToolCallInfo;
+import 'package:novel_ide/data/services/ai_service.dart' show AiService;
 
 /// Agent工具定义
 class AgentTool {

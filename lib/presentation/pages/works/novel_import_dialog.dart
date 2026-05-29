@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/services/novel_import_service.dart';
-import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/data/services/ai_analysis_service.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 
@@ -29,13 +27,9 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
   String? _fileName;
   bool _isImporting = false;
   bool _isAnalyzing = false;
-  bool _isPreviewing = false;
   String _statusText = '';
   double _progress = 0;
   ImportResult? _importResult;
-  ImportPreview? _importPreview;
-  String? _cachedContent;
-  AnalysisResult? _analysisResult;
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +214,6 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
         _filePath = result.files.single.path;
         _fileName = result.files.single.name;
         _importResult = null;
-        _analysisResult = null;
         _statusText = '';
       });
     }
@@ -234,7 +227,6 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
 
     // Step 1: 预览分析
     setState(() {
-      _isPreviewing = true;
       _statusText = '正在分析文件结构...';
     });
 
@@ -242,14 +234,10 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
       final service = NovelImportService();
       final preview = await service.previewImport(_filePath!);
       setState(() {
-        _importPreview = preview;
-        _cachedContent = null; // preview already read internally
-        _isPreviewing = false;
         _statusText = '识别结果：${preview.detectedType}（来源：${preview.matchSource}）\n${preview.chapters.length} 段内容，${preview.totalWords} 字';
       });
     } catch (e) {
       setState(() {
-        _isPreviewing = false;
         _statusText = '文件分析失败：$e';
       });
       return;
@@ -345,7 +333,6 @@ class _NovelImportDialogState extends ConsumerState<NovelImportDialog> {
 
       setState(() {
         _isAnalyzing = false;
-        _analysisResult = result;
         _progress = 1.0;
         _statusText = '全部完成！\n导入 ${_importResult?.chapterCount ?? 0} 章 → AI 提取 $result';
       });

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novel_ide/core/constants.dart';
-import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
@@ -55,7 +54,7 @@ class _FullTextReviewPageState extends ConsumerState<FullTextReviewPage> {
 
       // Combine chapter content (limit to avoid token overflow)
       final allContent = chapters.take(20).map((c) =>
-        '【${c.title}】\n${(c.content ?? '').length > 2000 ? (c.content!).substring(0, 2000) + '...' : c.content ?? ''}'
+        '【${c.title}】\n${c.content.length > 2000 ? c.content.substring(0, 2000) + '...' : c.content}'
       ).join('\n\n');
 
       // Load materials for context

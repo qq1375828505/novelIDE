@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:novel_ide/core/constants.dart';
 
 /// 爽点检查报告页 - 显示AI分析结果
 class ShuangdianReportPage extends StatelessWidget {

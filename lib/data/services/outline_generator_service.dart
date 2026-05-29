@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
-import 'package:novel_ide/presentation/state/app_providers.dart';
 
 /// 大纲层级节点
 class OutlineNode {

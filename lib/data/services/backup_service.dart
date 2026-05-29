@@ -24,7 +24,6 @@ class BackupService {
       // 获取项目目录
       final fs = LocalFileDataSource();
       final baseDir = await fs.getBaseDir();
-      if (baseDir == null) return null;
 
       final projectDir = Directory(p.join(baseDir.path, 'NovelProjects'));
       if (!await projectDir.exists()) return null;

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 
 /// 智谱AI (ZhipuAI) 服务
@@ -11,14 +10,6 @@ class ZhipuAIService {
   final String apiKey;
   
   ZhipuAIService({required this.apiKey});
-
-  /// 生成 JWT Token (智谱AI使用JWT而非普通API Key)
-  String _generateJWT() {
-    // 智谱AI的API Key格式: id.secret
-    // 需要使用JWT进行认证
-    // 简化处理：直接返回apiKey，实际应在服务端生成JWT
-    return apiKey;
-  }
 
   /// 发送聊天请求
   Future<String> chat({

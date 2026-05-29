@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// Workflow步骤定义
 class WorkflowStep {

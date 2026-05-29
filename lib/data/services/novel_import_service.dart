@@ -7,7 +7,6 @@ import 'package:charset/charset.dart';
 import 'package:epubx/epubx.dart';
 import 'package:novel_ide/data/datasources/local_file_datasource.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
-import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/data/models/material_models.dart';
 import 'package:novel_ide/data/repositories/material_repository.dart';
 

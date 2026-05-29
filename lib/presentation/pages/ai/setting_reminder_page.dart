@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/data/models/material_models.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:uuid/uuid.dart';
-import 'package:novel_ide/presentation/widgets/top_notification.dart';
 
 class SettingReminderPage extends ConsumerStatefulWidget {
   final String novelId;
@@ -21,8 +19,6 @@ class _SettingReminderPageState extends ConsumerState<SettingReminderPage> {
   @override
   Widget build(BuildContext context) {
     final reminders = ref.watch(settingRemindersProvider(widget.novelId));
-    final chars = ref.watch(charactersProvider(widget.novelId));
-    final settings = ref.watch(settingCardsProvider(widget.novelId));
 
     return Scaffold(
       appBar: AppBar(
