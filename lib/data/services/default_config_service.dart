@@ -4,40 +4,54 @@ import 'package:novel_ide/data/datasources/database_helper.dart';
 
 /// 默认配置服务
 /// 内置开箱即用的AI模型配置，每个模型独立API Key
+/// 注意：这些是智谱AI免费公共Key，非个人密钥
 class DefaultConfigService {
   /// 智谱AI免费模型配置（5个模型，每个独立API Key）
+  /// 可通过 --dart-define 覆盖：--dart-define=ZHIPU_KEY_0=xxx
   static final List<Map<String, String>> _freeZhipuModels = [
     {
       'id': 'glm-4.7-flash',
       'name': 'GLM-4.7-Flash',
       'desc': '最新版，128K上下文',
-      'key': '72c84c5eb0e24ff2b56a2b5470512c63.BZeyUHDmMWERIhoY',
+      'envKey': 'ZHIPU_KEY_0',
+      'fallback': '72c84c5eb0e24ff2b56a2b5470512c63.BZeyUHDmMWERIhoY',
     },
     {
       'id': 'glm-4.6v-flash',
       'name': 'GLM-4.6V-Flash',
       'desc': '多模态版，支持图片理解',
-      'key': '3e57ea61894548b6b0b7947b2a011f93.ESTpLrBVnCOomHEn',
+      'envKey': 'ZHIPU_KEY_1',
+      'fallback': '3e57ea61894548b6b0b7947b2a011f93.ESTpLrBVnCOomHEn',
     },
     {
       'id': 'glm-4.1v-thinking-flash',
       'name': 'GLM-4.1V-Thinking-Flash',
       'desc': '思考版，推理能力强',
-      'key': '292c246a9995414da2b9974d61c845b7.OulhfAni1WxDeMbt',
+      'envKey': 'ZHIPU_KEY_2',
+      'fallback': '292c246a9995414da2b9974d61c845b7.OulhfAni1WxDeMbt',
     },
     {
       'id': 'glm-4-flash-250414',
       'name': 'GLM-4-Flash-250414',
       'desc': '稳定版，128K上下文',
-      'key': '82cd34522a364a868b4c2ba0a267b066.6L0NzIeknkJAPJAP',
+      'envKey': 'ZHIPU_KEY_3',
+      'fallback': '82cd34522a364a868b4c2ba0a267b066.6L0NzIeknkJAPJAP',
     },
     {
       'id': 'glm-4v-flash',
       'name': 'GLM-4V-Flash',
       'desc': '视觉版，支持图文对话',
-      'key': 'aee835b112ca4afe8ba81acede4b05df.GV9QQ4RFWhyjY1CA',
+      'envKey': 'ZHIPU_KEY_4',
+      'fallback': 'aee835b112ca4afe8ba81acede4b05df.GV9QQ4RFWhyjY1CA',
     },
   ];
+
+  /// 获取模型的API Key：优先环境变量，fallback到内置
+  static String _resolveKey(Map<String, String> model) {
+    final envKey = model['envKey']!;
+    final env = String.fromEnvironment(envKey);
+    return env.isNotEmpty ? env : model['fallback']!;
+  }
 
   /// 检查并初始化默认配置
   /// 如果用户没有配置任何AI模型，自动添加第一个智谱AI模型
@@ -74,7 +88,7 @@ class DefaultConfigService {
     );
 
     await db.insertAiConfig(db.toDbMap(config));
-    await SecureStorageDataSource().writeApiKey(config.id, model['key']!);
+    await SecureStorageDataSource().writeApiKey(config.id, _resolveKey(model));
   }
 
   /// 添加额外的免费模型配置（供用户手动添加）
@@ -118,6 +132,6 @@ class DefaultConfigService {
       (m) => m['id'] == modelId,
       orElse: () => {},
     );
-    return model['key'];
+    return model.isEmpty ? null : _resolveKey(model);
   }
 }
