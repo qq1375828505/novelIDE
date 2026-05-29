@@ -27,7 +27,7 @@ Android版可以独立完成：
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
-| 框架 | Flutter 3.29 | Android单端优先，后续可复用部分逻辑 |
+| 框架 | Flutter 3.32+ / Dart 3.8+ | Android单端优先，后续可复用部分逻辑 |
 | 状态管理 | Riverpod | 管理作品、章节、编辑器状态、AI状态、主题皮肤状态 |
 | 本地索引 | SQLite (sqflite) | 作品列表、章节索引、搜索索引、写作统计、缓存 |
 | 本地配置 | Hive | 主题、字体、编辑器偏好、最近打开记录、皮肤持久化 |
@@ -169,30 +169,33 @@ TextField(
 
 ## 5. 页面结构
 
-### 5.1 底部导航（4个Tab）
+### 5.1 底部导航（3个Tab）
 
 Android版是完整移动端小说写作IDE，底部导航以作品创作为中心。
 
 ```dart
 NavItem(icon: Icons.auto_stories, label: '作品', page: WorksPage()),    // 首页
-NavItem(icon: Icons.account_tree, label: '大纲', page: OutlinePage()),
-NavItem(icon: Icons.inventory_2, label: '资料', page: MaterialsPage()),
+NavItem(icon: Icons.inventory_2, label: '资料', page: MaterialsTreePage()),
 NavItem(icon: Icons.chat_bubble, label: 'AI对话', page: AiChatPage()),
 ```
 
-- 「作品」Tab 为 App 首页，显示作品列表，点击进入作品详情（卷章列表），再点击章节进入编辑器
-- 「我的」页面（AI配置、Agent市场、字数目标、统计、深色模式、字体、软件配置、备份）已移至**资料页右上角设置按钮**，不再占用底部导航
-- 原「写作」Tab 已移除，写作入口改为 作品首页 → 作品详情 → 章节 → 编辑器
+- 「作品」Tab 为 App 首页，IDE 工作树风格展示作品→卷→章节
+- 「资料」Tab 使用 IDE 工作树展示资料分类，支持自定义文件夹
+- 「AI对话」Tab 为独立聊天页
+- 设置页面通过 AppBar 右上角齿轮按钮进入
 
-### 5.2 作品页（WorksPage）— App 首页
+### 5.2 作品页（WorksPage）— IDE 工作树
 
 - 底部导航「作品」Tab 为首页
 - 顶部渐变色统计栏：作品数 / 总字数 / 总章节
-- 作品卡片列表：封面缩略图 + 书名 + 简介 + 字数 + 章节数 + 更新时间
-- 空状态引导：一键创建或导入 TXT/MD 文件
-- AppBar 右侧：导入按钮 + 设置按钮（进入 ProfilePage）
-- 长按作品卡片：重命名 / 导出 / 删除
+- IDE 文件树风格：作品(文件夹) → 卷(子文件夹) → 章节(文件)
+- 懒加载：展开作品时加载卷，展开卷时加载章节
+- 点击章节直接进入编辑器
+- 长按作品：重命名 / 导出 / 新建卷 / 删除
+- 长按卷：添加章节 / 编辑概要 / 删除
+- 长按章节：编辑 / 改状态 / 编辑梗概 / 删除
 - FAB：新建作品
+- AppBar 右侧：导入按钮 + 设置按钮
 
 ### 5.3 作品详情页（NovelDetailPage）
 
@@ -1770,7 +1773,7 @@ lib/
 │       └── workspace_agent.dart           # ⭐ Workspace Agent 全能AI助手
 ├── presentation/
 │   ├── pages/
-│   │   ├── main_shell.dart                # 4-Tab 底部导航（作品/大纲/资料/AI对话）
+│   │   ├── main_shell.dart                # 3-Tab 底部导航（作品/资料/AI对话）
 │   │   ├── ai/
 │   │   │   ├── ai_drawer.dart             # 写作页内AI抽屉（含记忆上下文）
 │   │   │   ├── ai_chat_page.dart          # ⭐ 独立AI对话页（含Agent模式+技能+模型切换）
@@ -1825,8 +1828,8 @@ lib/
 | V1.3.0 | 2026-05 | V1 Bug修复(10个) + V2全功能 + V3全功能 |
 | V1.3.1 | 2026-05 | AI对话窗口、导出系统重写、小说记忆系统、Agent导入 |
 | V1.5.0 | 2026-05 | UI重构：仿作家助手交互流程（4Tab底部导航 · 作品首页 · 详情页 · 继续写作FAB）· 导出页折叠收缩 · 卡片全面升级 |
-| V1.5.1 | 2026-05 | 语音转文字+实时语音通话 · Skill写作技能系统 · Workspace Agent(29工具) · Workflow流水线 · 作品详情页Tab导航 · 智能导入(编码检测+预览) · 资料库文件树 · AI大纲生成 |
-| V1.5.1 | 2026-05 | 语音转文字+实时语音通话 · Skill写作技能系统 · Workspace Agent(29工具) · Workflow流水线 · 作品详情页Tab导航 · 智能导入(编码检测+预览) · 资料库文件树 · AI大纲生成 · 代码质量修复 |
+| V1.5.1 | 2026-05 | 语音转文字+实时语音通话 · Skill写作技能系统 · Workspace Agent(29工具) · Workflow流水线 · 智能导入(编码检测+预览) · 资料库文件树 · AI大纲生成 · 代码质量修复 |
+| V2.0.0 | 2026-05 | IDE工作树改造：作品/资料均为文件树风格 · 自定义文件夹 · 全页资料编辑器 · 底部导航精简为3Tab(作品/资料/AI对话) · FileTreeView组件增强(badge/trailing/缩进线) |
 
 ### 已修复的已知问题
 - 材料数据重启丢失（角色/设定/伏笔/参考的增删未持久化）

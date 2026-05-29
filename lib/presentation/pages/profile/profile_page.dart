@@ -260,7 +260,9 @@ class ProfilePage extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('关于'),
-            subtitle: const Text('网文写作IDE v1.0.0 · 完全单机运行'),
+            subtitle: const Text('网文写作IDE · 完全单机运行'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showAbout(context),
           ),
           const SizedBox(height: 32),
         ],
@@ -391,6 +393,65 @@ class ProfilePage extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAbout(BuildContext context) {
+    final features = [
+      'IDE 工作树 — 作品/卷/章节树形管理',
+      '资料库工作树 — 自定义文件夹 + 全页编辑器',
+      'AI 对话 — 多会话 / 智谱免费模型 / 联网搜索',
+      '写作编辑器 — 语音输入 / 自动保存 / 历史快照',
+      '导入导出 — TXT / EPUB / DOCX / novelpack',
+      '番茄写作 — 25种风格预设 / Agent 市场',
+      '精修引擎 — 8维审查 / 水文检测 / 爽点分析',
+      '资料管理 — 角色/设定/地点/势力/道具/伏笔/参考',
+      '8种主题皮肤 — 深色模式 + 护眼模式',
+      '全文搜索 — 跨章节全局查找替换',
+      '文章校对 — 错别字 / 标点 / 重复用字检测',
+      '数据安全 — 完全单机 / 本地备份恢复',
+    ];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(children: [
+          Icon(Icons.auto_stories, color: AppColors.primary),
+          const SizedBox(width: 8),
+          const Expanded(child: Text('网文写作IDE')),
+        ]),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('面向网络小说作者的全流程单机写作工具', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                const SizedBox(height: 16),
+                Text('功能一览', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[800])),
+                const SizedBox(height: 8),
+                ...features.map((f) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('• ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      Expanded(child: Text(f, style: const TextStyle(fontSize: 13))),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 16),
+                Text('技术栈', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[800])),
+                const SizedBox(height: 8),
+                Text('Flutter / Dart · Material 3 · Riverpod · SQLite · AI API', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                const SizedBox(height: 4),
+                Text('开源协议: MIT', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+              ],
+            ),
+          ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('关闭'))],
       ),
     );
   }

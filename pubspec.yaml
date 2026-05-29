@@ -1,7 +1,7 @@
 name: novel_ide
-description: 网文写作IDE Android移动端 V3
+description: 网文写作IDE - 全流程单机网文写作工具
 publish_to: 'none'
-version: 1.5.1+1
+version: 2.0.0+1
 
 environment:
   sdk: '>=3.8.0 <4.0.0'

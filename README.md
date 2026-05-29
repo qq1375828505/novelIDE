@@ -1,6 +1,6 @@
 # 网文写作IDE
 
-> 🚀 完全单机运行的网文写作IDE。AI写作辅助 · 双编辑器 · 富文本排版 · 8种主题 · 文章校对 · EPUB导出
+> 🚀 完全单机运行的网文写作IDE。IDE工作树 · AI写作辅助 · 资料库编辑器 · 8种主题 · 文章校对 · EPUB导出
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -24,20 +24,17 @@
 
 ```
 网文写作IDE/
-├── Android/          ← DAXIE666（Flutter 单机版）
-│   ├── 双编辑器（纯文本 + WebView富文本）
-│   ├── AI写作助手（对话/续写/润色/校对/审查）
-│   ├── 8种主题皮肤
-│   ├── EPUB/ZIP 导出
-│   └── 完全单机，数据本地存储
+├── lib/                    ← Flutter 主工程
+│   ├── core/               ← 常量/路由/主题
+│   ├── data/               ← 数据模型/仓库/服务
+│   ├── presentation/       ← UI页面/状态管理
+│   └── assets/             ← WebView编辑器资源
 │
-├── win版/            ← Electron + Monaco Editor（开发中）
-│   ├── 富文本编辑器（Monaco Editor）
-│   ├── 桌面级快捷键支持
-│   └── 待实现：同步 Android 端功能
+├── docs/                   ← 技术文档
+│   ├── Android技术方案.md
+│   └── Windows技术方案.md
 │
-├── Windows技术方案.md  ← Windows版技术文档
-└── Android技术方案.md  ← Android版技术文档
+└── win版/                  ← Electron + Monaco Editor（开发中）
 ```
 
 ---
@@ -219,23 +216,26 @@ Flutter → JS: RE.setBold() / RE.setHeading() / RE.insertImage()
 | **设定提醒** | 扫描全部章节，检测角色名/时间线/设定冲突 |
 | **通知提醒** | flutter_local_notifications 字数目标达标通知 |
 
-### 九、作品与大纲管理
+### 九、IDE 工作树
 
-**作品管理（首页）**
-- 底部导航「作品」Tab 为 App 首页
+底部导航 3 个 Tab：**作品 / 资料 / AI对话**
+
+**作品区（首页）**
+- IDE 文件树风格展示：作品 → 卷 → 章节，可展开/折叠
 - 顶部渐变统计栏：作品数 / 总字数 / 总章节
-- 作品列表卡片：封面缩略图 + 书名 + 简介 + 字数 + 章节数 + 更新时间
-- 新建 / 重命名 / 删除作品
-- 每部作品独立存储为 `NovelProjects/{id}_{title}/` 目录
-- 长按作品卡片弹出操作菜单（重命名 / 导出 / 删除）
-- 空状态引导：一键创建或导入 TXT/MD 文件
+- 点击章节直接进入编辑器
+- 长按菜单：重命名 / 新建卷 / 导出 / 删除
+- 卷长按：添加章节 / 编辑概要 / 删除
+- 章节长按：编辑 / 改状态 / 编辑梗概 / 删除
+- 支持拖拽排序
 
-**大纲管理**
-- 主线大纲编辑区 — 自由撰写故事主线，支持富文本
-- 多卷管理 — 新建卷、拖拽排序（ReorderableListView）
-- 多章管理 — 新建章节、拖拽排序
-- 章节状态 — 草稿（灰色）/ 进行中（蓝色）/ 已完成（绿色）/ 已定稿（金色）
-- 大纲与正文关联 — 每个章节可绑定梗概摘要
+**资料区**
+- IDE 文件树风格展示：角色/设定/地点/势力/道具/伏笔/参考/记忆
+- 自定义文件夹：用户可创建自定义分类
+- 点击资料文件 → 全页编辑器，退出自动保存
+- 长按文件夹：添加条目 / 重命名 / 删除
+- AI 大纲生成 → 树形展示生成结果
+- AI 记忆包 → 自动维护小说上下文
 
 ### 十、写作统计
 
@@ -293,7 +293,7 @@ Windows 版正在开发中，基于以下技术栈：
 
 | 层级 | Android (Flutter) | Windows (Electron) |
 |------|-------------------|-------------------|
-| **框架** | Flutter 3.29+ / Dart | Electron + TypeScript |
+| **框架** | Flutter 3.32+ / Dart 3.8+ | Electron + TypeScript |
 | **UI** | Material 3 + Riverpod | Tailwind CSS |
 | **编辑器** | TextField + WebView(rich_editor.js) | Monaco Editor |
 | **数据库** | SQLite (sqflite) | SQLite (better-sqlite3) |
@@ -320,8 +320,15 @@ lib/
 │   └── services/                      # AI/校对/EPUB/导入/记忆/通知
 ├── presentation/
 │   ├── state/                         # Riverpod Providers
-│   └── pages/                         # 全部页面（12个目录，30+页面）
-└── assets/editor/                     # WebView 编辑器资源（9个JS/CSS/HTML）
+│   ├── widgets/                       # 通用组件（FileTreeView等）
+│   └── pages/
+│       ├── works/                     # 作品工作树 + 编辑器
+│       ├── materials/                 # 资料工作树 + 编辑器
+│       ├── ai/                        # AI对话/搜索/精修
+│       ├── writing/                   # 写作编辑器
+│       ├── profile/                   # 设置/统计/模型配置
+│       └── stats/                     # 写作统计
+└── assets/editor/                     # WebView 编辑器资源
 ```
 
 ### 数据流架构
@@ -351,13 +358,13 @@ lib/
 git clone https://github.com/qq1375828505/novelIDE.git
 
 # 2. 进入项目目录
-cd DAXIE666
+cd novelIDE
 
 # 3. 安装依赖
 flutter pub get
 
 # 4. 生成 Freezed 代码（首次必须）
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build --delete-conflicting-outputs
 
 # 5. 运行
 flutter run
@@ -386,7 +393,7 @@ npm run build
 
 | 项目 | Android 版 | Windows 版 |
 |------|-----------|-----------|
-| SDK | Flutter >= 3.29.0 | Node.js >= 18 |
+| SDK | Flutter >= 3.8.0 | Node.js >= 18 |
 | 系统 | Android 6.0+ (minSdk 23) | Windows 10+ |
 | 编译 | compileSdk 36 | Electron Vite |
 
