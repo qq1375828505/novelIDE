@@ -21,13 +21,14 @@ class _AppConfigPageState extends State<AppConfigPage> {
   @override
   void initState() {
     super.initState();
+    _ctrl = TextEditingController();
     _loadConfig();
   }
 
   Future<void> _loadConfig() async {
     final config = await AppConfig.instance();
     setState(() {
-      _ctrl = TextEditingController(text: config.toDisplayString());
+      _ctrl.text = config.toDisplayString();
       _isLoading = false;
     });
   }
@@ -75,7 +76,7 @@ class _AppConfigPageState extends State<AppConfigPage> {
       final config = await AppConfig.instance();
       await config.reset();
       setState(() {
-        _ctrl = TextEditingController(text: config.toDisplayString());
+        _ctrl.text = config.toDisplayString();
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

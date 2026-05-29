@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
@@ -60,6 +61,7 @@ class BackupService {
 
       return backupPath;
     } catch (e) {
+      debugPrint('备份失败: $e');
       return null;
     }
   }

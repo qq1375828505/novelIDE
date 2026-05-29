@@ -35,6 +35,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   final SpeechToText _speech = SpeechToText();
   Timer? _autoSaveTimer;
   Timer? _snapshotTimer;
+  Timer? _historyDebounceTimer;
+  DateTime _lastSnapshotTime = DateTime.now();
   bool _showAiDrawer = false;
   bool _showSearchDrawer = false;
   bool _showFindBar = false;
@@ -159,10 +161,14 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     _autoSaveTimer = Timer(const Duration(milliseconds: 1500), () {
       _saveChapter();
     });
+    // Record undo history on 2s pause (meaningful edit boundary)
+    _historyDebounceTimer?.cancel();
+    _historyDebounceTimer = Timer(const Duration(seconds: 2), () {
+      _recordHistory();
+    });
   }
 
   Future<void> _saveChapter() async {
-    _recordHistory();
     final novel = ref.read(selectedNovelProvider);
     if (novel == null) return;
     final chapter = await ref.read(chapterRepoProvider).getChapter(widget.chapterId);
@@ -199,9 +205,19 @@ class _EditorPageState extends ConsumerState<EditorPage> {
 
   void _createSnapshot() {
     _snapshotTimer?.cancel();
-    _snapshotTimer = Timer(const Duration(minutes: 3), () async {
-      await ref.read(chapterRepoProvider).createSnapshot(widget.chapterId, _controller.text);
-    });
+    final elapsed = DateTime.now().difference(_lastSnapshotTime);
+    if (elapsed >= const Duration(minutes: 3)) {
+      // More than 3 minutes since last snapshot — fire immediately
+      ref.read(chapterRepoProvider).createSnapshot(widget.chapterId, _controller.text);
+      _lastSnapshotTime = DateTime.now();
+    } else {
+      // Schedule for the remaining time
+      final remaining = const Duration(minutes: 3) - elapsed;
+      _snapshotTimer = Timer(remaining, () {
+        ref.read(chapterRepoProvider).createSnapshot(widget.chapterId, _controller.text);
+        _lastSnapshotTime = DateTime.now();
+      });
+    }
   }
 
   void _showSnapshots() async {
@@ -452,6 +468,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   void dispose() {
     _autoSaveTimer?.cancel();
     _snapshotTimer?.cancel();
+    _historyDebounceTimer?.cancel();
     // 同步保存：用缓存的路径直接写文件，不依赖任何异步操作
     _forceSaveSync();
     _controller.dispose();
@@ -477,7 +494,10 @@ class _EditorPageState extends ConsumerState<EditorPage> {
         {'word_count': content.length, 'updated_at': DateTime.now().millisecondsSinceEpoch},
         where: 'id = ?',
         whereArgs: [widget.chapterId],
-      ));
+      )).catchError((e) {
+        debugPrint('dispose DB update failed: $e');
+        return 0;
+      });
     } catch (e) {
       debugPrint('dispose 强制保存失败: $e');
     }
