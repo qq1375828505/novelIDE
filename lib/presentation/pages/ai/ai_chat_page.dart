@@ -341,9 +341,10 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         taskType: 'chat',
       );
       // Replace old messages with summary + recent messages
+      // 用 user 角色做摘要（避免和 agent 的 system prompt 冲突）
       setState(() {
         _currentSession!.messages = [
-          {'role': 'system', 'content': '之前的对话摘要：$summary'},
+          {'role': 'user', 'content': '以下是之前的对话摘要，请据此回复用户后续的问题：\n$summary'},
           ...msgs.skip(30),
         ];
       });

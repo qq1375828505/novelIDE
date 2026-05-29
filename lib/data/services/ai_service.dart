@@ -306,6 +306,9 @@ class AiService {
         throw Exception('请求失败 ($statusCode): $respBody');
       }
       throw Exception('请求失败: ${e.message ?? e.type.name}');
+    } catch (e) {
+      // 兜底：非DioException的错误（如响应解析TypeError、NoSuchMethodError）
+      throw Exception('API响应解析失败: $e');
     }
   }
 }

@@ -74,7 +74,10 @@ class ModelTestService {
 
     try {
       // Try OpenAI-compatible /models endpoint
-      final modelsUrl = normalizedUrl.replaceAll(RegExp(r'/chat/completions.*'), '') + '/models';
+      final modelsUrl = normalizedUrl
+          .replaceAll(RegExp(r'/chat/completions.*'), '')
+          .replaceAll(RegExp(r'/v1/messages.*'), '')
+          + '/models';
       final response = await _dio.get(
         modelsUrl,
         options: Options(

@@ -107,6 +107,9 @@ class VoiceService {
 
   /// 语音合成 - 朗读文字（通过原生 TTS），等待朗读完成
   Future<void> speak(String text) async {
+    // 用版本号防竞态：旧回调发现版本号不匹配就丢弃
+    _speakGeneration++;
+    final currentGen = _speakGeneration;
     if (_isSpeaking) {
       await stopSpeaking();
     }
@@ -114,13 +117,18 @@ class VoiceService {
     onSpeakingChanged?.call(true);
     try {
       await _channel.invokeMethod('speak', {'text': text});
-      // 等待原生端通知朗读完成
-      // 原生 TTS 的 UtteranceProgressListener 会在朗读完毕后通过 channel 回调
     } catch (e) {
       debugPrint('TTS朗读失败: $e');
+      // 朗读失败时重置状态（因为不会有 onSpeakingDone 回调）
+      if (currentGen == _speakGeneration) {
+        _isSpeaking = false;
+        onSpeakingChanged?.call(false);
+      }
     }
-    // 注意：_isSpeaking 的重置由原生端通过 onSpeakingDone 回调处理
   }
+
+  /// 朗读版本号，防旧回调竞态
+  int _speakGeneration = 0;
 
   /// 原生端朗读完成回调（由外部设置）
   VoidCallback? onSpeakingDone;
@@ -185,10 +193,12 @@ class VoiceService {
   }
 
   /// 释放资源
-  void dispose() {
-    _speech.stop();
+  Future<void> dispose() async {
     try {
-      _channel.invokeMethod('shutdown');
+      await _speech.stop();
+    } catch (_) {}
+    try {
+      await _channel.invokeMethod('shutdown');
     } catch (_) {}
   }
 }
