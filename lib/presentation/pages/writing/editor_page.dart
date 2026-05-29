@@ -41,6 +41,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   final TextEditingController _findCtrl = TextEditingController();
   int _findIndex = 0;
   Chapter? _currentChapter;
+  /// dispose 安全：缓存 novel title，避免 dispose 后 ref 失效
+  String _novelTitle = '';
 
   @override
   void initState() {
@@ -124,6 +126,9 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   }
 
   Future<void> _loadChapter() async {
+    // 缓存 novel title 供 dispose 保存使用
+    final novel = ref.read(selectedNovelProvider);
+    if (novel != null) _novelTitle = novel.title;
     final chapter = await ref.read(chapterRepoProvider).getChapter(widget.chapterId);
     if (chapter != null) {
       _currentChapter = chapter;
@@ -448,12 +453,10 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   Future<void> _forceSaveOnDispose() async {
     try {
       final content = _controller.text;
-      if (content.isEmpty) return;
-      // 1. 保存文件
-      final novel = ref.read(selectedNovelProvider);
-      if (novel == null) return;
+      if (content.isEmpty || _novelTitle.isEmpty) return;
+      // 1. 保存文件（使用缓存的 novelTitle，不依赖 ref）
       final fs = LocalFileDataSource();
-      final projectPath = await fs.getProjectDir(widget.novelId, novel.title);
+      final projectPath = await fs.getProjectDir(widget.novelId, _novelTitle);
       await fs.saveChapterContent(projectPath, widget.chapterId, content);
       // 2. 更新数据库word_count（不依赖ref）
       final db = DatabaseHelper();

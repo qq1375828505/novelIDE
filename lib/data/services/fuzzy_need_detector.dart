@@ -14,8 +14,8 @@ class FuzzyNeedDetector {
   static const Map<String, List<String>> _quickPatterns = {
     'novel_genre': ['写小说', '写一本', '创作小说', '新小说', '开始写', '想写小说', '帮我写小说'],
     'agent_select': ['生成大纲', '生成角色', '检查爽点', '检测水文', '生成标题', '自动生成'],
-    'skill_select': ['优化', '改进', '提升', '润色', '重写'],
-    'clarify': ['帮忙', '帮我', '能不能', '怎么', '如何'],
+    'skill_select': ['帮我润色', '帮我重写', '帮我扩写', '帮我续写', '帮我优化文笔'],
+    // 移除 clarify：原来匹配"帮我""怎么""如何"，几乎每条消息都触发，体验差
   };
 
   /// 快速预检测：是否可能需要主动提问
@@ -321,11 +321,28 @@ class FuzzyNeedDetector {
 
   /// 检测是否需要触发Workspace Agent
   bool shouldTriggerWorkspaceAgent(String userInput) {
+    // 严格触发条件：必须是明确的工具调用意图，不能匹配普通聊天
     const triggerPatterns = [
-      '生成', '创建', '分析', '检查', '优化',
-      '帮我', '自动', '一键',
+      // 明确的工具请求
+      '帮我生成大纲', '帮我生成角色', '帮我生成标题',
+      '帮我分析剧情', '帮我检查爽点', '帮我检测水文',
+      '自动检查伏笔', '分析角色关系', '检查一致性',
+      '帮我创建角色', '帮我添加角色',
+      '帮我创建设定', '帮我添加设定',
+      '帮我添加伏笔', '帮我添加地点',
+      '帮我创建作品', '帮我创建小说',
+      '帮我切换作品',
+      '帮我检查闲置伏笔', '帮我分析节奏',
+      // 明确的工具请求动词+对象组合
+      '生成一章大纲', '生成下一章',
+      '分析剧情', '检查设定', '检测错别字',
+      '导出作品', '备份数据',
+      '帮我导出', '帮我备份',
     ];
-    return triggerPatterns.any((p) => userInput.contains(p));
+    for (final p in triggerPatterns) {
+      if (userInput.contains(p)) return true;
+    }
+    return false;
   }
 
   /// 从用户输入提取任务意图

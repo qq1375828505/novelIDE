@@ -258,11 +258,11 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
       }
 
       // 智能判断是否需要 Agent 模式（带工具能力）
-      // - 有选中小说 → Agent 模式（操作资料库/章节等）
-      // - 检测到任务意图（生成/分析/检查/优化/配置等）→ Agent 模式
-      // - 普通闲聊 → 普通模式（省 token）
+      // 只有检测到明确的任务意图时才启用 Agent 模式（避免每条消息都传26个工具到API导致卡死）
+      // - 普通闲聊、写作指导、问题解答 → 普通模式（省 token、更快）
+      // - 明确的工具调用请求 → Agent 模式
       final novel = ref.read(selectedNovelProvider);
-      final needsAgent = novel != null || shouldTriggerAgent;
+      final needsAgent = shouldTriggerAgent;
 
       if (needsAgent) {
         final agent = WorkspaceAgent();
