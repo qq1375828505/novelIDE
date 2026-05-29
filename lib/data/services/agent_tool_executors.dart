@@ -203,6 +203,7 @@ void registerAllToolExecutors({
 
   agent.registerExecutor('get_chapter_content', (args) async {
     final title = args['chapter_title'] as String? ?? '';
+    if (title.isEmpty) return ToolResult(toolName: 'get_chapter_content', success: false, message: '章节标题不能为空');
     final chapters = await chapterRepo.getChaptersByNovel(novelId);
     final match = chapters.where((c) => c.title.contains(title));
     if (match.isEmpty) return ToolResult(toolName: 'get_chapter_content', success: false, message: '未找到匹配的章节');
@@ -257,9 +258,10 @@ void registerAllToolExecutors({
     final name = args['name'] as String? ?? '';
     final category = args['category'] as String?;
     final description = args['description'] as String?;
+    final leader = args['leader'] as String?;
     if (name.isEmpty) return ToolResult(toolName: 'add_faction', success: false, message: '势力名称不能为空');
     final factions = await materialRepo.getFactions(novelId);
-    factions.add(Faction(id: uuid.v4(), novelId: novelId, name: name, category: category, description: description));
+    factions.add(Faction(id: uuid.v4(), novelId: novelId, name: name, category: category, description: description, leader: leader));
     await materialRepo.saveFactions(novelId, factions);
     return ToolResult(toolName: 'add_faction', success: true, message: '已添加势力：$name');
   });

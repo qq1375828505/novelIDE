@@ -86,7 +86,9 @@ class LocalFileDataSource {
   }
 
   Future<void> saveChapterContent(String projectPath, String chapterId, String content) async {
-    final file = File(p.join(projectPath, 'chapters', '$chapterId.md'));
+    final dir = Directory(p.join(projectPath, 'chapters'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final file = File(p.join(dir.path, '$chapterId.md'));
     await file.writeAsString(content, encoding: utf8);
   }
 

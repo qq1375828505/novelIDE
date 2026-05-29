@@ -979,7 +979,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               if (nameCtrl.text.trim().isEmpty) return;
               final char = Character(
                 id: const Uuid().v4(),
@@ -990,7 +990,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
               );
               final list = ref.read(charactersProvider(novelId));
               ref.read(charactersProvider(novelId).notifier).state = [...list, char];
-              MaterialRepository().saveCharacters(novelId, [...list, char]);
+              await MaterialRepository().saveCharacters(novelId, [...list, char]);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
@@ -1000,32 +1000,32 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     );
   }
 
-  void _showSettingDialog(String novelId) => _showSimpleDialog(novelId, '设定', (name, cat, desc) {
+  void _showSettingDialog(String novelId) => _showSimpleDialog(novelId, '设定', (name, cat, desc) async {
     final card = SettingCard(id: const Uuid().v4(), novelId: novelId, name: name, category: cat, description: desc);
     final list = ref.read(settingCardsProvider(novelId));
     ref.read(settingCardsProvider(novelId).notifier).state = [...list, card];
-    MaterialRepository().saveSettingCards(novelId, [...list, card]);
+    await MaterialRepository().saveSettingCards(novelId, [...list, card]);
   });
 
-  void _showLocationDialog(String novelId) => _showSimpleDialog(novelId, '地点', (name, cat, desc) {
+  void _showLocationDialog(String novelId) => _showSimpleDialog(novelId, '地点', (name, cat, desc) async {
     final loc = Location(id: const Uuid().v4(), novelId: novelId, name: name, category: cat, description: desc);
     final list = ref.read(locationsProvider(novelId));
     ref.read(locationsProvider(novelId).notifier).state = [...list, loc];
-    MaterialRepository().saveLocations(novelId, [...list, loc]);
+    await MaterialRepository().saveLocations(novelId, [...list, loc]);
   });
 
-  void _showFactionDialog(String novelId) => _showSimpleDialog(novelId, '势力', (name, cat, desc) {
+  void _showFactionDialog(String novelId) => _showSimpleDialog(novelId, '势力', (name, cat, desc) async {
     final faction = Faction(id: const Uuid().v4(), novelId: novelId, name: name, category: cat, description: desc);
     final list = ref.read(factionsProvider(novelId));
     ref.read(factionsProvider(novelId).notifier).state = [...list, faction];
-    MaterialRepository().saveFactions(novelId, [...list, faction]);
+    await MaterialRepository().saveFactions(novelId, [...list, faction]);
   });
 
-  void _showItemDialog(String novelId) => _showSimpleDialog(novelId, '道具', (name, cat, desc) {
+  void _showItemDialog(String novelId) => _showSimpleDialog(novelId, '道具', (name, cat, desc) async {
     final item = Item(id: const Uuid().v4(), novelId: novelId, name: name, category: cat, description: desc);
     final list = ref.read(itemsProvider(novelId));
     ref.read(itemsProvider(novelId).notifier).state = [...list, item];
-    MaterialRepository().saveItems(novelId, [...list, item]);
+    await MaterialRepository().saveItems(novelId, [...list, item]);
   });
 
   void _showHookDialog(String novelId) {
@@ -1048,7 +1048,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               if (titleCtrl.text.trim().isEmpty) return;
               final hook = PlotHook(
                 id: const Uuid().v4(),
@@ -1058,7 +1058,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
               );
               final list = ref.read(plotHooksProvider(novelId));
               ref.read(plotHooksProvider(novelId).notifier).state = [...list, hook];
-              MaterialRepository().savePlotHooks(novelId, [...list, hook]);
+              await MaterialRepository().savePlotHooks(novelId, [...list, hook]);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
@@ -1088,7 +1088,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               if (titleCtrl.text.trim().isEmpty) return;
               final newRef = ReferenceMaterial(
                 id: const Uuid().v4(),
@@ -1098,7 +1098,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
               );
               final list = ref.read(referencesProvider(novelId));
               ref.read(referencesProvider(novelId).notifier).state = [...list, newRef];
-              MaterialRepository().saveReferences(novelId, [...list, newRef]);
+              await MaterialRepository().saveReferences(novelId, [...list, newRef]);
               Navigator.pop(ctx);
             },
             child: const Text('添加'),
