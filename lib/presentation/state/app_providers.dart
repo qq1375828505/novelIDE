@@ -120,6 +120,7 @@ final settingRemindersProvider = StateProvider.family<List<SettingReminder>, Str
 final locationsProvider = StateProvider.family<List<Location>, String>((ref, novelId) => []);
 final factionsProvider = StateProvider.family<List<Faction>, String>((ref, novelId) => []);
 final itemsProvider = StateProvider.family<List<Item>, String>((ref, novelId) => []);
+final customFoldersProvider = StateProvider<List<CustomMaterialFolder>>((ref) => []);
 
 // AI Config
 final aiConfigsProvider = StateProvider<List<AiConfig>>((ref) => []);

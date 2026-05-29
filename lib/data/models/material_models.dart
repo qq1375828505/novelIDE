@@ -419,3 +419,71 @@ class Item {
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );
 }
+
+/// 自定义文件夹
+class CustomMaterialFolder {
+  final String id;
+  final String name;
+  final List<CustomMaterialItem> items;
+
+  CustomMaterialFolder({required this.id, required this.name, List<CustomMaterialItem>? items})
+      : items = items ?? [];
+
+  CustomMaterialFolder copyWith({
+    String? id,
+    String? name,
+    List<CustomMaterialItem>? items,
+  }) =>
+      CustomMaterialFolder(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        items: items ?? List<CustomMaterialItem>.from(this.items),
+      );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'items': items.map((i) => i.toJson()).toList(),
+  };
+
+  factory CustomMaterialFolder.fromJson(Map<String, dynamic> json) => CustomMaterialFolder(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    items: (json['items'] as List<dynamic>?)
+            ?.map((i) => CustomMaterialItem.fromJson(i as Map<String, dynamic>))
+            .toList() ??
+        [],
+  );
+}
+
+/// 自定义资料条目
+class CustomMaterialItem {
+  final String id;
+  String title;
+  String content;
+  String? category;
+
+  CustomMaterialItem({required this.id, required this.title, required this.content, this.category});
+
+  CustomMaterialItem copyWith({
+    String? id,
+    String? title,
+    String? content,
+    String? category,
+  }) =>
+      CustomMaterialItem(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        content: content ?? this.content,
+        category: category ?? this.category,
+      );
+
+  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'content': content, 'category': category};
+
+  factory CustomMaterialItem.fromJson(Map<String, dynamic> json) => CustomMaterialItem(
+    id: json['id'] as String,
+    title: json['title'] as String,
+    content: json['content'] as String? ?? '',
+    category: json['category'] as String?,
+  );
+}

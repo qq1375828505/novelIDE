@@ -311,13 +311,18 @@ void registerAllToolExecutors({
     final characters = await materialRepo.getCharacters(novelId);
     final idx = characters.indexWhere((c) => c.name == name);
     if (idx < 0) return ToolResult(toolName: 'update_character', success: false, message: '未找到角色：$name');
-    if (args['role'] != null || args['description'] != null) {
+    final old = characters[idx];
+    if (args['role'] != null || args['description'] != null || args['personality'] != null || args['appearance'] != null || args['background'] != null) {
       characters[idx] = Character(
-        id: characters[idx].id,
+        id: old.id,
         novelId: novelId,
         name: name,
-        role: args['role'] as String? ?? characters[idx].role,
-        description: args['description'] as String? ?? characters[idx].description,
+        role: args['role'] as String? ?? old.role,
+        description: args['description'] as String? ?? old.description,
+        personality: args['personality'] as String? ?? old.personality,
+        appearance: args['appearance'] as String? ?? old.appearance,
+        background: args['background'] as String? ?? old.background,
+        tags: old.tags,
       );
     }
     await materialRepo.saveCharacters(novelId, characters);
@@ -335,6 +340,189 @@ void registerAllToolExecutors({
     hooks[idx] = PlotHook(id: hooks[idx].id, novelId: novelId, title: title, description: hooks[idx].description, isRevealed: isRevealed);
     await materialRepo.savePlotHooks(novelId, hooks);
     return ToolResult(toolName: 'update_hook_status', success: true, message: '已更新伏笔「$title」状态为：${isRevealed ? "已回收" : "待回收"}');
+  });
+
+  agent.registerExecutor('update_setting', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'update_setting', success: false, message: '设定名称不能为空');
+    final settings = await materialRepo.getSettingCards(novelId);
+    final idx = settings.indexWhere((s) => s.name == name);
+    if (idx < 0) return ToolResult(toolName: 'update_setting', success: false, message: '未找到设定：$name');
+    final old = settings[idx];
+    settings[idx] = SettingCard(
+      id: old.id,
+      novelId: novelId,
+      name: name,
+      category: args['category'] as String? ?? old.category,
+      description: args['description'] as String? ?? old.description,
+      tags: old.tags,
+    );
+    await materialRepo.saveSettingCards(novelId, settings);
+    return ToolResult(toolName: 'update_setting', success: true, message: '已更新设定：$name');
+  });
+
+  agent.registerExecutor('update_location', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'update_location', success: false, message: '地点名称不能为空');
+    final locations = await materialRepo.getLocations(novelId);
+    final idx = locations.indexWhere((l) => l.name == name);
+    if (idx < 0) return ToolResult(toolName: 'update_location', success: false, message: '未找到地点：$name');
+    final old = locations[idx];
+    locations[idx] = Location(
+      id: old.id,
+      novelId: novelId,
+      name: name,
+      category: args['category'] as String? ?? old.category,
+      description: args['description'] as String? ?? old.description,
+      features: args['features'] as String? ?? old.features,
+      rules: args['rules'] as String? ?? old.rules,
+      tags: old.tags,
+    );
+    await materialRepo.saveLocations(novelId, locations);
+    return ToolResult(toolName: 'update_location', success: true, message: '已更新地点：$name');
+  });
+
+  agent.registerExecutor('update_faction', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'update_faction', success: false, message: '势力名称不能为空');
+    final factions = await materialRepo.getFactions(novelId);
+    final idx = factions.indexWhere((f) => f.name == name);
+    if (idx < 0) return ToolResult(toolName: 'update_faction', success: false, message: '未找到势力：$name');
+    final old = factions[idx];
+    factions[idx] = Faction(
+      id: old.id,
+      novelId: novelId,
+      name: name,
+      category: args['category'] as String? ?? old.category,
+      description: args['description'] as String? ?? old.description,
+      leader: args['leader'] as String? ?? old.leader,
+      strength: args['strength'] as String? ?? old.strength,
+      members: old.members,
+      tags: old.tags,
+    );
+    await materialRepo.saveFactions(novelId, factions);
+    return ToolResult(toolName: 'update_faction', success: true, message: '已更新势力：$name');
+  });
+
+  agent.registerExecutor('update_item', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'update_item', success: false, message: '道具名称不能为空');
+    final items = await materialRepo.getItems(novelId);
+    final idx = items.indexWhere((i) => i.name == name);
+    if (idx < 0) return ToolResult(toolName: 'update_item', success: false, message: '未找到道具：$name');
+    final old = items[idx];
+    final isKey = args['isKeyItem'] as bool?;
+    items[idx] = Item(
+      id: old.id,
+      novelId: novelId,
+      name: name,
+      category: args['category'] as String? ?? old.category,
+      description: args['description'] as String? ?? old.description,
+      powerLevel: args['powerLevel'] as String? ?? old.powerLevel,
+      owner: args['owner'] as String? ?? old.owner,
+      isKeyItem: isKey ?? old.isKeyItem,
+      tags: old.tags,
+    );
+    await materialRepo.saveItems(novelId, items);
+    return ToolResult(toolName: 'update_item', success: true, message: '已更新道具：$name');
+  });
+
+  agent.registerExecutor('update_reference', (args) async {
+    final title = args['title'] as String? ?? '';
+    if (title.isEmpty) return ToolResult(toolName: 'update_reference', success: false, message: '参考标题不能为空');
+    final refs = await materialRepo.getReferences(novelId);
+    final idx = refs.indexWhere((r) => r.title == title);
+    if (idx < 0) return ToolResult(toolName: 'update_reference', success: false, message: '未找到参考：$title');
+    final old = refs[idx];
+    refs[idx] = ReferenceMaterial(
+      id: old.id,
+      novelId: novelId,
+      title: title,
+      content: args['content'] as String? ?? old.content,
+      source: args['source'] as String? ?? old.source,
+      sourceUrl: args['sourceUrl'] as String? ?? old.sourceUrl,
+    );
+    await materialRepo.saveReferences(novelId, refs);
+    return ToolResult(toolName: 'update_reference', success: true, message: '已更新参考：$title');
+  });
+
+  // ====== 删除类工具 ======
+
+  agent.registerExecutor('delete_character', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'delete_character', success: false, message: '角色名称不能为空');
+    final characters = await materialRepo.getCharacters(novelId);
+    final idx = characters.indexWhere((c) => c.name == name);
+    if (idx < 0) return ToolResult(toolName: 'delete_character', success: false, message: '未找到角色：$name');
+    characters.removeAt(idx);
+    await materialRepo.saveCharacters(novelId, characters);
+    return ToolResult(toolName: 'delete_character', success: true, message: '已删除角色：$name');
+  });
+
+  agent.registerExecutor('delete_setting', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'delete_setting', success: false, message: '设定名称不能为空');
+    final settings = await materialRepo.getSettingCards(novelId);
+    final idx = settings.indexWhere((s) => s.name == name);
+    if (idx < 0) return ToolResult(toolName: 'delete_setting', success: false, message: '未找到设定：$name');
+    settings.removeAt(idx);
+    await materialRepo.saveSettingCards(novelId, settings);
+    return ToolResult(toolName: 'delete_setting', success: true, message: '已删除设定：$name');
+  });
+
+  agent.registerExecutor('delete_location', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'delete_location', success: false, message: '地点名称不能为空');
+    final locations = await materialRepo.getLocations(novelId);
+    final idx = locations.indexWhere((l) => l.name == name);
+    if (idx < 0) return ToolResult(toolName: 'delete_location', success: false, message: '未找到地点：$name');
+    locations.removeAt(idx);
+    await materialRepo.saveLocations(novelId, locations);
+    return ToolResult(toolName: 'delete_location', success: true, message: '已删除地点：$name');
+  });
+
+  agent.registerExecutor('delete_faction', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'delete_faction', success: false, message: '势力名称不能为空');
+    final factions = await materialRepo.getFactions(novelId);
+    final idx = factions.indexWhere((f) => f.name == name);
+    if (idx < 0) return ToolResult(toolName: 'delete_faction', success: false, message: '未找到势力：$name');
+    factions.removeAt(idx);
+    await materialRepo.saveFactions(novelId, factions);
+    return ToolResult(toolName: 'delete_faction', success: true, message: '已删除势力：$name');
+  });
+
+  agent.registerExecutor('delete_item', (args) async {
+    final name = args['name'] as String? ?? '';
+    if (name.isEmpty) return ToolResult(toolName: 'delete_item', success: false, message: '道具名称不能为空');
+    final items = await materialRepo.getItems(novelId);
+    final idx = items.indexWhere((i) => i.name == name);
+    if (idx < 0) return ToolResult(toolName: 'delete_item', success: false, message: '未找到道具：$name');
+    items.removeAt(idx);
+    await materialRepo.saveItems(novelId, items);
+    return ToolResult(toolName: 'delete_item', success: true, message: '已删除道具：$name');
+  });
+
+  agent.registerExecutor('delete_hook', (args) async {
+    final title = args['title'] as String? ?? '';
+    if (title.isEmpty) return ToolResult(toolName: 'delete_hook', success: false, message: '伏笔标题不能为空');
+    final hooks = await materialRepo.getPlotHooks(novelId);
+    final idx = hooks.indexWhere((h) => h.title == title);
+    if (idx < 0) return ToolResult(toolName: 'delete_hook', success: false, message: '未找到伏笔：$title');
+    hooks.removeAt(idx);
+    await materialRepo.savePlotHooks(novelId, hooks);
+    return ToolResult(toolName: 'delete_hook', success: true, message: '已删除伏笔：$title');
+  });
+
+  agent.registerExecutor('delete_reference', (args) async {
+    final title = args['title'] as String? ?? '';
+    if (title.isEmpty) return ToolResult(toolName: 'delete_reference', success: false, message: '参考标题不能为空');
+    final refs = await materialRepo.getReferences(novelId);
+    final idx = refs.indexWhere((r) => r.title == title);
+    if (idx < 0) return ToolResult(toolName: 'delete_reference', success: false, message: '未找到参考：$title');
+    refs.removeAt(idx);
+    await materialRepo.saveReferences(novelId, refs);
+    return ToolResult(toolName: 'delete_reference', success: true, message: '已删除参考：$title');
   });
 
   // ====== 分析类工具 ======

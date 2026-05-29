@@ -93,8 +93,20 @@ class WorkspaceAgent {
     AgentTool(name: 'add_reference', description: '添加参考资料', parameters: {'title': '参考标题', 'content': '参考内容'}, category: ToolCategories.write),
 
     // ====== 编辑类工具 ======
-    AgentTool(name: 'update_character', description: '更新已有角色信息', parameters: {'name': '角色名称', 'role': '新定位（可选）', 'description': '新描述（可选）'}, category: ToolCategories.edit),
+    AgentTool(name: 'update_character', description: '更新已有角色信息', parameters: {'name': '角色名称', 'role': '新定位（可选）', 'description': '新描述（可选）', 'personality': '性格特征（可选）', 'appearance': '外貌描述（可选）', 'background': '背景故事（可选）'}, category: ToolCategories.edit),
     AgentTool(name: 'update_hook_status', description: '更新伏笔状态', parameters: {'title': '伏笔标题', 'status': 'planted/resolved/idle'}, category: ToolCategories.edit),
+    AgentTool(name: 'update_setting', description: '更新已有设定信息', parameters: {'name': '设定名称', 'category': '新分类（可选）', 'description': '新描述（可选）'}, category: ToolCategories.edit),
+    AgentTool(name: 'update_location', description: '更新已有地点信息', parameters: {'name': '地点名称', 'category': '新分类（可选）', 'description': '新描述（可选）', 'features': '地理特征（可选）', 'rules': '特殊规则（可选）'}, category: ToolCategories.edit),
+    AgentTool(name: 'update_faction', description: '更新已有势力信息', parameters: {'name': '势力名称', 'category': '新分类（可选）', 'description': '新描述（可选）', 'leader': '新首领（可选）', 'strength': '新战力（可选）'}, category: ToolCategories.edit),
+    AgentTool(name: 'update_item', description: '更新已有道具信息', parameters: {'name': '道具名称', 'category': '新分类（可选）', 'description': '新描述（可选）', 'powerLevel': '新品阶（可选）', 'owner': '新持有者（可选）', 'isKeyItem': '是否关键道具（可选）'}, category: ToolCategories.edit),
+    AgentTool(name: 'update_reference', description: '更新已有参考资料', parameters: {'title': '参考标题', 'content': '新内容（可选）', 'source': '新来源（可选）', 'sourceUrl': '新来源URL（可选）'}, category: ToolCategories.edit),
+    AgentTool(name: 'delete_character', description: '删除指定角色', parameters: {'name': '角色名称'}, category: ToolCategories.edit),
+    AgentTool(name: 'delete_setting', description: '删除指定设定', parameters: {'name': '设定名称'}, category: ToolCategories.edit),
+    AgentTool(name: 'delete_location', description: '删除指定地点', parameters: {'name': '地点名称'}, category: ToolCategories.edit),
+    AgentTool(name: 'delete_faction', description: '删除指定势力', parameters: {'name': '势力名称'}, category: ToolCategories.edit),
+    AgentTool(name: 'delete_item', description: '删除指定道具', parameters: {'name': '道具名称'}, category: ToolCategories.edit),
+    AgentTool(name: 'delete_hook', description: '删除指定伏笔', parameters: {'title': '伏笔标题'}, category: ToolCategories.edit),
+    AgentTool(name: 'delete_reference', description: '删除指定参考资料', parameters: {'title': '参考标题'}, category: ToolCategories.edit),
 
     // ====== 分析类工具 ======
     AgentTool(name: 'analyze_plot_consistency', description: '分析剧情一致性', category: ToolCategories.analyze),

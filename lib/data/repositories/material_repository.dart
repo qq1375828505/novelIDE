@@ -139,4 +139,22 @@ class MaterialRepository {
     final file = File(p.join(dir.path, '${novelId}_items.json'));
     await file.writeAsString(jsonEncode(items.map((i) => i.toJson()).toList()));
   }
+
+  // --- V3: Custom Folders ---
+  Future<List<CustomMaterialFolder>> getCustomFolders(String novelId) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_custom_folders.json'));
+    if (!await file.exists()) return [];
+    final content = await file.readAsString(encoding: utf8);
+    final list = jsonDecode(content) as List<dynamic>;
+    return list.map((j) => CustomMaterialFolder.fromJson(j as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveCustomFolders(String novelId, List<CustomMaterialFolder> folders) async {
+    final dir = await _getMaterialsDir(novelId);
+    final file = File(p.join(dir.path, '${novelId}_custom_folders.json'));
+    final json = folders.map((f) => f.toJson()).toList();
+    await file.writeAsString(jsonEncode(json), encoding: utf8);
+  }
+
 }

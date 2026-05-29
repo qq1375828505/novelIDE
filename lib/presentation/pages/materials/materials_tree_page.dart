@@ -11,49 +11,7 @@ import 'package:novel_ide/presentation/widgets/file_tree_view.dart';
 import 'package:novel_ide/presentation/pages/works/export_page.dart' hide FileTreeNode;
 import 'package:novel_ide/presentation/pages/materials/material_editor_page.dart';
 
-/// 自定义文件夹
-class CustomMaterialFolder {
-  final String id;
-  final String name;
-  final List<CustomMaterialItem> items;
 
-  CustomMaterialFolder({required this.id, required this.name, List<CustomMaterialItem>? items})
-      : items = items ?? [];
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'items': items.map((i) => i.toJson()).toList(),
-  };
-
-  factory CustomMaterialFolder.fromJson(Map<String, dynamic> json) => CustomMaterialFolder(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    items: (json['items'] as List<dynamic>?)?.map((i) => CustomMaterialItem.fromJson(i as Map<String, dynamic>)).toList() ?? [],
-  );
-}
-
-/// 自定义资料条目
-class CustomMaterialItem {
-  final String id;
-  String title;
-  String content;
-  String? category;
-
-  CustomMaterialItem({required this.id, required this.title, required this.content, this.category});
-
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'content': content, 'category': category};
-
-  factory CustomMaterialItem.fromJson(Map<String, dynamic> json) => CustomMaterialItem(
-    id: json['id'] as String,
-    title: json['title'] as String,
-    content: json['content'] as String? ?? '',
-    category: json['category'] as String?,
-  );
-}
-
-/// 自定义文件夹 Provider
-final customFoldersProvider = StateProvider<List<CustomMaterialFolder>>((ref) => []);
 
 /// 新版资料库页面 - 层级文件树展示
 class MaterialsTreePage extends ConsumerStatefulWidget {
@@ -81,8 +39,22 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
       final novel = ref.read(selectedNovelProvider);
       if (novel != null) {
         loadNovelMaterials(ref, novel.id);
+        _loadCustomFolders(novel.id);
       }
     });
+  }
+
+  Future<void> _loadCustomFolders(String novelId) async {
+    final folders = await MaterialRepository().getCustomFolders(novelId);
+    if (mounted) {
+      ref.read(customFoldersProvider.notifier).state = folders;
+    }
+  }
+
+  Future<void> _persistCustomFolders() async {
+    final novelId = ref.read(selectedNovelProvider)?.id;
+    if (novelId == null) return;
+    await MaterialRepository().saveCustomFolders(novelId, ref.read(customFoldersProvider));
   }
 
   Future<void> _loadMemory() async {
@@ -531,6 +503,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
           final updated = List<CustomMaterialFolder>.from(folders);
           updated[folderIdx] = CustomMaterialFolder(id: folders[folderIdx].id, name: folders[folderIdx].name, items: items);
           ref.read(customFoldersProvider.notifier).state = updated;
+          _persistCustomFolders();
         }
       }
       return;
@@ -586,6 +559,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
             ));
             if (confirm == true) {
               ref.read(customFoldersProvider.notifier).state = ref.read(customFoldersProvider).where((f) => f.id != folderId).toList();
+              _persistCustomFolders();
               setState(() {});
             }
           },
@@ -621,6 +595,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
           if (fi >= 0) {
             folders[fi] = CustomMaterialFolder(id: folders[fi].id, name: folders[fi].name, items: [...folders[fi].items, item]);
             ref.read(customFoldersProvider.notifier).state = folders;
+            _persistCustomFolders();
           }
           Navigator.pop(ctx);
           setState(() {});
@@ -643,6 +618,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
             f.id == folderId ? CustomMaterialFolder(id: f.id, name: ctrl.text.trim(), items: f.items) : f
           ).toList();
           ref.read(customFoldersProvider.notifier).state = updated;
+          _persistCustomFolders();
           Navigator.pop(ctx);
           setState(() {});
         }, child: const Text('确定'))],
@@ -670,6 +646,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
                 final items = List<CustomMaterialItem>.from(folders[fi].items)..removeWhere((i) => i.id == node.id);
                 folders[fi] = CustomMaterialFolder(id: folders[fi].id, name: folders[fi].name, items: items);
                 ref.read(customFoldersProvider.notifier).state = folders;
+                _persistCustomFolders();
                 setState(() {});
               }
             }
@@ -936,6 +913,11 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
           list.removeWhere((i) => i.id == node.id);
           await repo.saveItems(novelId, list);
           break;
+        case 'hook':
+          final list = await repo.getPlotHooks(novelId);
+          list.removeWhere((h) => h.id == node.id);
+          await repo.savePlotHooks(novelId, list);
+          break;
       }
       _refreshMaterials(novelId);
     }
@@ -963,6 +945,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
             ...ref.read(customFoldersProvider),
             folder,
           ];
+          _persistCustomFolders();
           _expandedNodes.add(ctrl.text.trim());
           Navigator.pop(ctx);
           setState(() {});

@@ -737,6 +737,24 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   _pickFile();
                 },
               ),
+              // 选择资料选项
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.library_books, color: Colors.teal),
+                ),
+                title: const Text('选择资料', style: TextStyle(fontSize: 16)),
+                subtitle: const Text('选择角色、设定等资料作为上下文', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showMaterialPicker();
+                },
+              ),
               // 技能选项
               ListTile(
                 leading: Container(
@@ -1006,6 +1024,266 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
     );
 
     _scrollToBottom();
+  }
+
+  /// 选择资料作为AI上下文
+  void _showMaterialPicker() {
+    final novel = ref.read(selectedNovelProvider);
+    if (novel == null) {
+      TopNotification.error(context, '请先选择一部小说');
+      return;
+    }
+    final novelId = novel.id;
+
+    final characters = ref.read(charactersProvider(novelId));
+    final settings = ref.read(settingCardsProvider(novelId));
+    final locations = ref.read(locationsProvider(novelId));
+    final factions = ref.read(factionsProvider(novelId));
+    final items = ref.read(itemsProvider(novelId));
+    final hooks = ref.read(plotHooksProvider(novelId));
+    final references = ref.read(referencesProvider(novelId));
+    final customFolders = ref.read(customFoldersProvider);
+
+    final tabNames = ['角色', '设定', '地点', '势力', '道具', '伏笔', '参考', ...customFolders.map((f) => f.name)];
+    final selectedIds = <String>{};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setPickerState) => Container(
+          height: MediaQuery.of(ctx).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.library_books, size: 20, color: Colors.teal),
+                    const SizedBox(width: 8),
+                    const Text('选择资料', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    Text('${selectedIds.length} 项已选', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 40,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: tabNames.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Chip(
+                        label: Text(tabNames[index], style: const TextStyle(fontSize: 12)),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  children: [
+                    _buildSectionHeader('角色'),
+                    for (final c in characters)
+                      CheckboxListTile(
+                        value: selectedIds.contains(c.id),
+                        onChanged: (v) => setPickerState(() {
+                          v == true ? selectedIds.add(c.id) : selectedIds.remove(c.id);
+                        }),
+                        title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: _buildPreview('${c.role ?? ""} ${c.description ?? ""}'.trim()),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    _buildSectionHeader('设定'),
+                    for (final s in settings)
+                      CheckboxListTile(
+                        value: selectedIds.contains(s.id),
+                        onChanged: (v) => setPickerState(() {
+                          v == true ? selectedIds.add(s.id) : selectedIds.remove(s.id);
+                        }),
+                        title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: _buildPreview(s.description ?? ''),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    _buildSectionHeader('地点'),
+                    for (final l in locations)
+                      CheckboxListTile(
+                        value: selectedIds.contains(l.id),
+                        onChanged: (v) => setPickerState(() {
+                          v == true ? selectedIds.add(l.id) : selectedIds.remove(l.id);
+                        }),
+                        title: Text(l.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: _buildPreview(l.description ?? ''),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    _buildSectionHeader('势力'),
+                    for (final f in factions)
+                      CheckboxListTile(
+                        value: selectedIds.contains(f.id),
+                        onChanged: (v) => setPickerState(() {
+                          v == true ? selectedIds.add(f.id) : selectedIds.remove(f.id);
+                        }),
+                        title: Text(f.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: _buildPreview(f.description ?? ''),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    _buildSectionHeader('道具'),
+                    for (final i in items)
+                      CheckboxListTile(
+                        value: selectedIds.contains(i.id),
+                        onChanged: (v) => setPickerState(() {
+                          v == true ? selectedIds.add(i.id) : selectedIds.remove(i.id);
+                        }),
+                        title: Text(i.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: _buildPreview(i.description ?? ''),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    _buildSectionHeader('伏笔'),
+                    for (final h in hooks)
+                      CheckboxListTile(
+                        value: selectedIds.contains(h.id),
+                        onChanged: (v) => setPickerState(() {
+                          v == true ? selectedIds.add(h.id) : selectedIds.remove(h.id);
+                        }),
+                        title: Text(h.title, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: _buildPreview(h.description ?? ''),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    _buildSectionHeader('参考'),
+                    for (final r in references)
+                      CheckboxListTile(
+                        value: selectedIds.contains(r.id),
+                        onChanged: (v) => setPickerState(() {
+                          v == true ? selectedIds.add(r.id) : selectedIds.remove(r.id);
+                        }),
+                        title: Text(r.title, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: _buildPreview(r.content ?? ''),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    for (final folder in customFolders) ...[
+                      _buildSectionHeader(folder.name),
+                      for (final item in folder.items)
+                        CheckboxListTile(
+                          value: selectedIds.contains(item.id),
+                          onChanged: (v) => setPickerState(() {
+                            v == true ? selectedIds.add(item.id) : selectedIds.remove(item.id);
+                          }),
+                          title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w500)),
+                          subtitle: _buildPreview(item.content),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: selectedIds.isEmpty ? null : () {
+                        final buffer = StringBuffer();
+                        buffer.writeln('[选择的资料上下文]');
+                        for (final c in characters.where((c) => selectedIds.contains(c.id))) {
+                          buffer.writeln('## 角色：${c.name}');
+                          if (c.role != null) buffer.writeln('定位: ${c.role}');
+                          if (c.description != null) buffer.writeln(c.description);
+                          buffer.writeln();
+                        }
+                        for (final s in settings.where((s) => selectedIds.contains(s.id))) {
+                          buffer.writeln('## 设定：${s.name}');
+                          if (s.category != null) buffer.writeln('分类: ${s.category}');
+                          if (s.description != null) buffer.writeln(s.description);
+                          buffer.writeln();
+                        }
+                        for (final l in locations.where((l) => selectedIds.contains(l.id))) {
+                          buffer.writeln('## 地点：${l.name}');
+                          if (l.category != null) buffer.writeln('分类: ${l.category}');
+                          if (l.description != null) buffer.writeln(l.description);
+                          buffer.writeln();
+                        }
+                        for (final f in factions.where((f) => selectedIds.contains(f.id))) {
+                          buffer.writeln('## 势力：${f.name}');
+                          if (f.description != null) buffer.writeln(f.description);
+                          buffer.writeln();
+                        }
+                        for (final i in items.where((i) => selectedIds.contains(i.id))) {
+                          buffer.writeln('## 道具：${i.name}');
+                          if (i.description != null) buffer.writeln(i.description);
+                          buffer.writeln();
+                        }
+                        for (final h in hooks.where((h) => selectedIds.contains(h.id))) {
+                          buffer.writeln('## 伏笔：${h.title}');
+                          if (h.description != null) buffer.writeln(h.description);
+                          buffer.writeln();
+                        }
+                        for (final r in references.where((r) => selectedIds.contains(r.id))) {
+                          buffer.writeln('## 参考：${r.title}');
+                          if (r.content != null) buffer.writeln(r.content);
+                          buffer.writeln();
+                        }
+                        for (final folder in customFolders) {
+                          for (final item in folder.items.where((i) => selectedIds.contains(i.id))) {
+                            buffer.writeln('## ${folder.name}：${item.title}');
+                            buffer.writeln(item.content);
+                            buffer.writeln();
+                          }
+                        }
+                        buffer.writeln('---请基于以上资料回答用户的问题---');
+                        _inputCtrl.text = '${buffer.toString()}\n${_inputCtrl.text}';
+                        Navigator.pop(ctx);
+                      },
+                      child: Text('确定 (${selectedIds.length}项)'),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+    );
+  }
+
+  Widget _buildPreview(String text) {
+    return Text(
+      text.isEmpty ? '无描述' : text.substring(0, text.length.clamp(0, 30)),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+    );
   }
 
   /// 选择文件
