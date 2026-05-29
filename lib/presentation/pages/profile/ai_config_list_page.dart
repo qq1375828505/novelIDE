@@ -216,7 +216,7 @@ class AiConfigListPage extends ConsumerWidget {
                   TextField(controller: modelCtrl, decoration: const InputDecoration(labelText: '模型 ID', prefixIcon: Icon(Icons.memory))),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<ApiProtocol>(
-                    initialValue: selectedProtocol,
+                    value: selectedProtocol,
                     decoration: const InputDecoration(labelText: 'API 协议', prefixIcon: Icon(Icons.swap_horiz)),
                     items: const [
                       DropdownMenuItem(value: ApiProtocol.openaiCompatible, child: Text('OpenAI兼容')),
