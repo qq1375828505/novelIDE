@@ -34,3 +34,8 @@ Thumbs.db
 *密钥*
 *key*
 *.env
+
+# 敏感证书文件
+*.p12
+*.pem
+*.local
