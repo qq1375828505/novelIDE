@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/core/router.dart';
 import 'package:novel_ide/core/theme/app_themes.dart';
@@ -292,7 +293,10 @@ class ProfilePage extends ConsumerWidget {
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () {
-                // TODO: 打开浏览器跳转注册链接
+                final url = announcement['url'];
+                if (url != null && url.isNotEmpty) {
+                  launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                }
               },
               child: Container(
                 padding: const EdgeInsets.all(8),

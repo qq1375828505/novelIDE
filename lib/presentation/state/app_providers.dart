@@ -266,3 +266,6 @@ final sidebarOpenProvider = StateProvider<bool>((ref) => false);
 
 /// 新建会话触发器（用于 MainShell 触发 AiChatPage 新建会话）
 final newSessionTriggerProvider = StateProvider<int>((ref) => 0);
+
+/// 资料库初始选中分类（用于侧边栏点击定位到具体tab）
+final initialMaterialTabProvider = StateProvider<String?>((ref) => null);

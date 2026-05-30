@@ -43,7 +43,33 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
         loadNovelMaterials(ref, novel.id);
         _loadCustomFolders(novel.id);
       }
+      // 读取初始分类，展开对应节点
+      final initialTab = ref.read(initialMaterialTabProvider);
+      if (initialTab != null) {
+        final tabLabel = _materialTypeToLabel(initialTab);
+        if (tabLabel != null && !_expandedNodes.contains(tabLabel)) {
+          setState(() {
+            _expandedNodes.add(tabLabel);
+          });
+        }
+        // 消费掉，避免下次进入还跳转
+        ref.read(initialMaterialTabProvider.notifier).state = null;
+      }
     });
+  }
+
+  /// 将 materialType 映射为中文标签
+  String? _materialTypeToLabel(String type) {
+    switch (type) {
+      case 'character': return '角色';
+      case 'setting': return '设定';
+      case 'location': return '地点';
+      case 'faction': return '势力';
+      case 'item': return '道具';
+      case 'hook': return '伏笔';
+      case 'reference': return '参考';
+      default: return null;
+    }
   }
 
   Future<void> _loadCustomFolders(String novelId) async {

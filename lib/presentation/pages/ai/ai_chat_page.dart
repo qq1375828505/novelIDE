@@ -25,6 +25,7 @@ import 'package:novel_ide/presentation/pages/ai/polish_engine_page.dart';
 import 'package:novel_ide/presentation/pages/writing/proofread_page.dart';
 import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
 import 'package:novel_ide/presentation/pages/profile/profile_page.dart';
+import 'package:novel_ide/presentation/pages/tomato/agent_marketplace_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/presentation/widgets/skill_indicator.dart';
 import 'package:novel_ide/presentation/widgets/proactive_question_dialog.dart';
@@ -713,7 +714,10 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                       Navigator.pop(ctx);
                       _showWritingTemplates();
                     }),
-                    _buildSheetItem(Icons.local_fire_department, '番茄写作', '风格预设', () => Navigator.pop(ctx)),
+                    _buildSheetItem(Icons.local_fire_department, '番茄写作', '风格预设', () {
+                      Navigator.pop(ctx);
+                      _showTomatoPresetPicker();
+                    }),
                     _buildSheetItem(Icons.phone, '语音通话', '实时AI对话', () { Navigator.pop(ctx); _openVoiceCall(); }),
                     _buildSheetItem(Icons.bar_chart, '写作统计', '字数趋势', () {
                       Navigator.pop(ctx);
@@ -839,8 +843,36 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
               : ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: agents.length,
+                  itemCount: agents.length + 1,
                   itemBuilder: (context, index) {
+                    // 最后一项：更多Agent按钮
+                    if (index == agents.length) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const AgentMarketplacePage()));
+                        },
+                        child: Container(
+                          width: 80,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: cardBg2,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF333333)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.storefront, color: primaryColor, size: 20),
+                              const SizedBox(height: 6),
+                              Text('更多', style: const TextStyle(color: textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
                     final agent = agents[index];
                     return GestureDetector(
                       onTap: () {
@@ -1092,6 +1124,70 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
               const SizedBox(height: 8),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// 显示番茄写作预设选择弹窗
+  void _showTomatoPresetPicker() {
+    final presets = ref.read(tomatoPresetsProvider);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.65),
+        decoration: const BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36, height: 4,
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(color: const Color(0xFF444444), borderRadius: BorderRadius.circular(2)),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('选择番茄写作预设', style: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: presets.length,
+                itemBuilder: (context, index) {
+                  final preset = presets[index];
+                  final isApplied = ref.read(currentPresetProvider)?.id == preset.id;
+                  return ListTile(
+                    leading: Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: cardBg2,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(preset.category.isNotEmpty ? preset.category.substring(0, 1) : preset.name.substring(0, 1),
+                          style: const TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    title: Text(preset.name, style: const TextStyle(color: textPrimary, fontSize: 14)),
+                    subtitle: Text(preset.description, style: const TextStyle(color: textTertiary, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    trailing: isApplied ? const Icon(Icons.check_circle, color: primaryColor, size: 20) : null,
+                    onTap: () {
+                      ref.read(currentPresetProvider.notifier).state = preset;
+                      Navigator.pop(ctx);
+                      TopNotification.success(context, '已应用预设：${preset.name}');
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:novel_ide/core/constants.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 
@@ -349,11 +351,76 @@ var wereadBridge = {
   }
 
   /// 插入图片
-  void _insertImage() {
-    // TODO: 打开文件选择器选择图片，获取URL后调用 _callJs("RE.insertImage([...])")
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('图片插入功能开发中')),
-    );
+  Future<void> _insertImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowCompression: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final filePath = result.files.first.path;
+      if (filePath == null) return;
+
+      final file = File(filePath);
+      if (!await file.exists()) return;
+
+      // 限制图片大小：超过2MB提示压缩
+      final fileSize = await file.length();
+      if (fileSize > 2 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('图片过大（>2MB），建议选择更小的图片')),
+          );
+        }
+        return;
+      }
+
+      // 读取图片并转为base64
+      final bytes = await file.readAsBytes();
+      final base64Str = base64Encode(bytes);
+
+      // 根据文件扩展名判断MIME类型
+      final ext = filePath.split('.').last.toLowerCase();
+      final mimeType = _getMimeType(ext);
+
+      // 插入到WebView编辑器
+      final html = '<img src="data:$mimeType;base64,$base64Str" style="max-width:100%;height:auto;" />';
+      final escapedHtml = html.replaceAll("'", "\\'").replaceAll('\n', '');
+      _callJs("RE.insertImage('$escapedHtml')");
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('图片已插入'), duration: Duration(seconds: 1)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('插入图片失败: $e')),
+        );
+      }
+    }
+  }
+
+  /// 根据扩展名获取MIME类型
+  String _getMimeType(String ext) {
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'bmp':
+        return 'image/bmp';
+      default:
+        return 'image/png';
+    }
   }
 
   /// 插入链接

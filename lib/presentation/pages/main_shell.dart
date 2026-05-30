@@ -1028,12 +1028,17 @@ class _MainShellState extends ConsumerState<MainShell> {
     return GestureDetector(
       onTap: () {
         setState(() => _sidebarOpen = false);
+        // 设置初始分类，供 MaterialsTreePage 读取
+        if (materialType != null) {
+          ref.read(initialMaterialTabProvider.notifier).state = materialType;
+        } else {
+          ref.read(initialMaterialTabProvider.notifier).state = null;
+        }
         // 跳转到资料库页面
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => const MaterialsTreePage(),
-            // TODO: 传递 materialType 参数，待 MaterialsTreePage 支持
           ),
         );
       },
@@ -1128,6 +1133,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             child: GestureDetector(
               onTap: () {
                 setState(() => _sidebarOpen = false);
+                ref.read(initialMaterialTabProvider.notifier).state = 'character';
                 Navigator.push(
                   context,
                   MaterialPageRoute(
