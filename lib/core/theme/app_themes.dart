@@ -111,20 +111,20 @@ class AppSkins {
     brightness: Brightness.light,
   );
 
-  // ==================== 2. 黑色 ====================
+  // ==================== 2. 黑色（ChatGPT风格） ====================
   static const black = SkinTheme(
     type: SkinType.black,
-    primary: Color(0xFF9B8AFF),
+    primary: Color(0xFF10A37F),
     secondary: Color(0xFF00E5BB),
-    background: Color(0xFF1A1A2E),
-    surface: Color(0xFF252540),
-    textPrimary: Color(0xFFE8E8EE),
-    textSecondary: Color(0xFF8E8E93),
-    appBarBg: Color(0xFF252540),
-    navBg: Color(0xFF252540),
-    navSelected: Color(0xFF9B8AFF),
-    navUnselected: Color(0xFF8E8E93),
-    cardBg: Color(0xFF252540),
+    background: Color(0xFF000000),
+    surface: Color(0xFF1A1A1A),
+    textPrimary: Color(0xFFFFFFFF),
+    textSecondary: Color(0xFF888888),
+    appBarBg: Color(0xFF000000),
+    navBg: Color(0xFF0D0D0D),
+    navSelected: Color(0xFF10A37F),
+    navUnselected: Color(0xFF888888),
+    cardBg: Color(0xFF1F1F1F),
     brightness: Brightness.dark,
   );
 

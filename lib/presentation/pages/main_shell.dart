@@ -28,6 +28,12 @@ class MainShell extends ConsumerWidget {
         onDestinationSelected: (index) {
           ref.read(bottomNavIndexProvider.notifier).state = index;
         },
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF0D0D0D)
+            : null,
+        indicatorColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF10A37F).withOpacity(0.15)
+            : null,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.auto_stories_outlined),

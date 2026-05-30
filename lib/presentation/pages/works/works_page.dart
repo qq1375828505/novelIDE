@@ -102,16 +102,13 @@ class _WorksPageState extends ConsumerState<WorksPage> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
-          ],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF10A37F), Color(0xFF0D8C6C)],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: const Color(0xFF10A37F).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -137,49 +134,102 @@ class _WorksPageState extends ConsumerState<WorksPage> {
     return '$count';
   }
 
-  /// 空状态
+  /// 空状态 — 暗色主题风格
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
-    return Center(
+    return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 60),
+            // Logo
             Container(
-              width: 100,
-              height: 100,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF10A37F), Color(0xFF0D8C6C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10A37F).withOpacity(0.3),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: Icon(Icons.auto_stories, size: 48, color: AppColors.primary.withOpacity(0.5)),
+              child: const Icon(Icons.auto_stories, size: 40, color: Colors.white),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             const Text(
               '开始你的创作之旅',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '创建一部作品，开启网文写作之路',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () => _showCreateNovelDialog(context, ref),
-              icon: const Icon(Icons.add),
-              label: const Text('新建作品'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
+            Text(
+              'AI 全程辅助 · 离线写作 · 数据只属于你',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 36),
+            // 新建按钮
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: FilledButton.icon(
+                onPressed: () => _showCreateNovelDialog(context, ref),
+                icon: const Icon(Icons.add_rounded, size: 22),
+                label: const Text('新建作品', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF10A37F),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
             TextButton.icon(
               onPressed: () => _showImportDialog(context, ref),
-              icon: const Icon(Icons.file_upload_outlined, size: 18),
-              label: const Text('导入 TXT / MD / EPUB 文件'),
+              icon: const Icon(Icons.file_upload_outlined, size: 18, color: Color(0xFF888888)),
+              label: const Text('导入 TXT / MD / EPUB 文件', style: TextStyle(color: Color(0xFF888888))),
             ),
+            const SizedBox(height: 48),
+            // 三大卖点
+            Row(
+              children: [
+                _FeatureCard(
+                  icon: Icons.shield_outlined,
+                  title: '完全离线',
+                  subtitle: '数据只属于你',
+                  color: const Color(0xFF10A37F),
+                ),
+                const SizedBox(width: 12),
+                _FeatureCard(
+                  icon: Icons.smart_toy_outlined,
+                  title: '35+ AI工具',
+                  subtitle: '智能写作Agent',
+                  color: const Color(0xFF9B8AFF),
+                ),
+                const SizedBox(width: 12),
+                _FeatureCard(
+                  icon: Icons.book_outlined,
+                  title: '8种资料',
+                  subtitle: '完整创作管理',
+                  color: const Color(0xFFFF9F43),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -250,9 +300,9 @@ class _WorksPageState extends ConsumerState<WorksPage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: SafeArea(
@@ -710,6 +760,46 @@ class _WorksPageState extends ConsumerState<WorksPage> {
         FilledButton(onPressed: () async { await ref.read(chapterRepoProvider).updateChapter(chapter.copyWith(summary: ctrl.text.trim().isEmpty ? null : ctrl.text.trim()), novel.title); _loadedChapters.remove(chapter.volumeId); if (ctx.mounted) Navigator.pop(ctx); setState(() {}); }, child: const Text('保存')),
       ],
     ));
+  }
+}
+
+/// 卖点卡片
+class _FeatureCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  const _FeatureCard({required this.icon, required this.title, required this.subtitle, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF2A2A2A)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 10),
+            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 2),
+            Text(subtitle, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+          ],
+        ),
+      ),
+    );
   }
 }
 
