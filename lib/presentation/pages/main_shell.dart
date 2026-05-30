@@ -314,7 +314,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _selectedModel,
+                        _selectedModelDisplay,
                         style: TextStyle(
                           color: textSecondary,
                           fontSize: 11,
@@ -797,7 +797,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             onPressed: () async {
               if (ctrl.text.trim().isEmpty) return;
               final novelRepo = ref.read(novelRepoProvider);
-              await novelRepo.updateNovelTitle(novel.id, ctrl.text.trim());
+              await novelRepo.updateNovel(novel.copyWith(title: ctrl.text.trim()));
               Navigator.pop(ctx);
               // 刷新作品列表
               ref.invalidate(novelsProvider);
@@ -824,7 +824,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               final novelRepo = ref.read(novelRepoProvider);
-              await novelRepo.deleteNovel(novel.id);
+              await novelRepo.deleteNovel(novel.id, novel.title);
               Navigator.pop(ctx);
               // 清除选中状态
               if (ref.read(selectedNovelProvider)?.id == novel.id) {

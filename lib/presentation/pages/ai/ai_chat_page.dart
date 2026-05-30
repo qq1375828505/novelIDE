@@ -903,8 +903,10 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                             ref.read(currentPresetProvider.notifier).state = TomatoPreset(
                               id: skill.id,
                               name: skill.name,
+                              category: skill.category,
                               description: skill.description ?? '',
-                              systemPrompt: skill.systemPrompt ?? '',
+                              systemPrompt: skill.content,
+                              tags: skill.keywords,
                             );
                             TopNotification.success(context, '已应用技能：${skill.name}');
                           },
