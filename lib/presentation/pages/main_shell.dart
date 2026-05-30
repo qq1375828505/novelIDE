@@ -147,9 +147,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: bgColor,
-        border: Border(bottom: BorderSide(color: Color(0xFF2A2A2A))),
+        border: const Border(bottom: BorderSide(color: Color(0xFF2A2A2A))),
       ),
       child: SafeArea(
         bottom: false,
@@ -157,7 +157,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           children: [
             // 菜单按钮
             IconButton(
-              icon: const Icon(Icons.menu, color: textPrimary, size: 24),
+              icon: Icon(Icons.menu, color: textPrimary, size: 24),
               onPressed: () => setState(() => _sidebarOpen = true),
             ),
             // 标题区域（点击展开模型选择）
@@ -167,7 +167,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       '网文写作IDE',
                       style: TextStyle(
                         color: textPrimary,
@@ -184,7 +184,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                       ),
                       child: Text(
                         _selectedModel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: textSecondary,
                           fontSize: 11,
                         ),
@@ -196,14 +196,14 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
             // 新建按钮
             IconButton(
-              icon: const Icon(Icons.edit, color: textPrimary, size: 22),
+              icon: Icon(Icons.edit, color: textPrimary, size: 22),
               onPressed: () {
                 // TODO: 新建会话
               },
             ),
             // 设置按钮
             IconButton(
-              icon: const Icon(Icons.settings, color: textPrimary, size: 22),
+              icon: Icon(Icons.settings, color: textPrimary, size: 22),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -438,7 +438,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   size: 16,
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.menu_book, color: textPrimary, size: 16),
+                Icon(Icons.menu_book, color: textPrimary, size: 16),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -556,17 +556,25 @@ class _MainShellState extends ConsumerState<MainShell> {
     Color badgeColor;
     String badgeText;
     switch (status) {
+      case ChapterStatus.unwritten:
+        badgeColor = const Color(0xFF6C757D);
+        badgeText = '未写';
+        break;
       case ChapterStatus.draft:
         badgeColor = const Color(0xFFFFC107);
         badgeText = '草稿';
+        break;
+      case ChapterStatus.polishing:
+        badgeColor = const Color(0xFF17A2B8);
+        badgeText = '润色中';
         break;
       case ChapterStatus.completed:
         badgeColor = const Color(0xFF28A745);
         badgeText = '已完成';
         break;
-      case ChapterStatus.empty:
-        badgeColor = const Color(0xFF6C757D);
-        badgeText = '未写';
+      case ChapterStatus.exported:
+        badgeColor = const Color(0xFF007BFF);
+        badgeText = '已导出';
         break;
     }
     
@@ -695,7 +703,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                       ),
                       child: Text(
                         model.tag!,
-                        style: const TextStyle(color: primaryColor, fontSize: 10),
+                        style: TextStyle(color: primaryColor, fontSize: 10),
                       ),
                     ),
                   ],

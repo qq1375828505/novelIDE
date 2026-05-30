@@ -897,7 +897,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
   void _handleMic() {
     // TODO: 实现语音输入
-    TopNotification.info(context, '语音输入功能开发中');
+    TopNotification.show(context, '语音输入功能开发中', type: 'info');
   }
 
   /// 调用Agent
