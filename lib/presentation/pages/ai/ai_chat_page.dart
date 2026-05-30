@@ -21,6 +21,7 @@ import 'package:novel_ide/data/services/fuzzy_need_detector.dart';
 import 'package:novel_ide/data/models/writing_skill_model.dart';
 import 'package:novel_ide/data/repositories/chat_history_repository.dart';
 import 'package:novel_ide/presentation/pages/ai/voice_call_page.dart';
+import 'package:novel_ide/presentation/pages/profile/voice_config_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/presentation/widgets/skill_indicator.dart';
 import 'package:novel_ide/presentation/widgets/proactive_question_dialog.dart';
@@ -986,7 +987,24 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                       color: hasVoiceModel ? Colors.grey[600] : Colors.grey[300],
                       size: 24,
                     ),
-                    onPressed: hasVoiceModel ? _openVoiceCall : null,
+                    onPressed: hasVoiceModel
+                        ? _openVoiceCall
+                        : () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('语音通话需要配置语音模型，请前往 我的 → 语音配置'),
+                                duration: Duration(seconds: 3),
+                                action: SnackBarAction(
+                                  label: '去配置',
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => const VoiceConfigPage(),
+                                    ));
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                     tooltip: hasVoiceModel ? '语音通话' : '请先配置语音模型',
                   );
                 },
@@ -1284,7 +1302,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
     final novel = ref.read(selectedNovelProvider);
     if (novel == null) {
-      TopNotification.error(context, '请先选择一部小说');
+      _showNeedNovelDialog('执行工作流需要先选择一部作品，是否前往创建？');
       return;
     }
 
@@ -1474,6 +1492,30 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
     );
   }
 
+  /// 提示需要选择作品，引导用户前往作品页
+  void _showNeedNovelDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('需要选择作品'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(bottomNavIndexProvider.notifier).state = 0;
+            },
+            child: const Text('前往作品页'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 去AI味：将AI生成的文本改写为自然人类风格
   void _humanizeText() {
     final inputText = _inputCtrl.text.trim();
@@ -1503,7 +1545,7 @@ $inputText''';
   void _showMaterialPicker() {
     final novel = ref.read(selectedNovelProvider);
     if (novel == null) {
-      TopNotification.error(context, '请先选择一部小说');
+      _showNeedNovelDialog('选择资料需要先选择一部作品，是否前往创建？');
       return;
     }
     final novelId = novel.id;

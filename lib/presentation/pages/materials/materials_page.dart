@@ -83,11 +83,14 @@ class _MaterialsPageState extends ConsumerState<MaterialsPage> with TickerProvid
                 children: [
                   Icon(Icons.inventory_2, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 16),
-                  Text('先选择一部作品', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
+                  Text('资料库用于管理小说的角色、设定、世界观等', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+                  const SizedBox(height: 8),
+                  Text('请先选择或创建一部作品', style: TextStyle(fontSize: 16, color: Colors.grey[700], fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
                     onPressed: () => ref.read(bottomNavIndexProvider.notifier).state = 0,
-                    child: const Text('去选择作品'),
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text('前往作品页'),
                   ),
                 ],
               ),

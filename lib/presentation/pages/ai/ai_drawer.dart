@@ -43,7 +43,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
     if (text.isEmpty) return;
 
     final preset = ref.read(currentPresetProvider);
-    final config = ref.read(selectedAiConfigProvider);
+    final config = ref.read(effectiveAiConfigProvider);
 
     setState(() {
       _messages.add({'role': 'user', 'content': text});

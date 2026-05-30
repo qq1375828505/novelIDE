@@ -403,13 +403,12 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
 
   /// AI生成大纲
   Future<void> _generateOutline(String novelId) async {
-    // 获取AI配置
-    final configs = ref.read(aiConfigsProvider);
-    if (configs.isEmpty) {
+    // 获取AI配置（支持游客模式）
+    final aiConfig = ref.read(effectiveAiConfigProvider);
+    if (aiConfig == null) {
       _showTopMsg('请先在"我的"页面配置AI模型', isError: true);
       return;
     }
-    final aiConfig = configs.first;
 
     // 获取章节
     List<Chapter> chapters;

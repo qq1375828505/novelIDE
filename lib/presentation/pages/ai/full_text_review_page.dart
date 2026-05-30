@@ -29,7 +29,7 @@ class _FullTextReviewPageState extends ConsumerState<FullTextReviewPage> {
   };
 
   Future<void> _runReview() async {
-    final config = ref.read(selectedAiConfigProvider);
+    final config = ref.read(effectiveAiConfigProvider);
     if (config == null) {
       TopNotification.success(context, '请先配置AI模型');
       return;

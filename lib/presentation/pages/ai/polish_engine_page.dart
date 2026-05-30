@@ -54,7 +54,7 @@ class _PolishEnginePageState extends ConsumerState<PolishEnginePage> {
   final List<bool> _enabled = List.generate(8, (_) => true);
 
   Future<void> _startPolish() async {
-    final config = ref.read(selectedAiConfigProvider);
+    final config = ref.read(effectiveAiConfigProvider);
     if (config == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('请先配置AI模型')),
