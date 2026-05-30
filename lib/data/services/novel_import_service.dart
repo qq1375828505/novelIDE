@@ -266,6 +266,7 @@ class NovelImportService {
     if (contentType != ImportContentType.chapters) {
       return _importAsMaterial(
         novelId: novelId,
+        novelTitle: novelTitle,
         filePath: filePath,
         content: content,
         contentType: contentType,
@@ -383,13 +384,37 @@ class NovelImportService {
   /// 将非章节内容（大纲/角色/设定）存入资料库
   Future<ImportResult> _importAsMaterial({
     String? novelId,
+    String? novelTitle,
     required String filePath,
     required String content,
     required ImportContentType contentType,
     required String detectedTitle,
   }) async {
-    if (novelId == null || novelId.isEmpty) {
-      return ImportResult(success: false, error: '需要先选择作品才能导入资料');
+    final db = await DatabaseHelper().database;
+    
+    // 如果没有选择作品，自动创建一个新作品
+    String actualNovelId = novelId ?? '';
+    String actualNovelTitle = novelTitle ?? '';
+    
+    if (actualNovelId.isEmpty) {
+      actualNovelTitle = p.basenameWithoutExtension(filePath);
+      if (actualNovelTitle.length > 50) {
+        actualNovelTitle = actualNovelTitle.substring(0, 50);
+      }
+      actualNovelId = _uuid.v4();
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db.insert('novels', {
+        'id': actualNovelId,
+        'title': actualNovelTitle,
+        'author': '',
+        'description': '从文件导入：${p.basename(filePath)}',
+        'status': 'ongoing',
+        'total_word_count': content.length,
+        'chapter_count': 0,
+        'created_at': now,
+        'updated_at': now,
+      });
     }
 
     final materialRepo = MaterialRepository();
@@ -402,14 +427,14 @@ class NovelImportService {
         // 统一存为参考资料
         final ref = ReferenceMaterial(
           id: _uuid.v4(),
-          novelId: novelId,
+          novelId: actualNovelId,
           title: title,
           content: content.trim(),
           source: '文件导入',
         );
-        final existing = await materialRepo.getReferences(novelId);
+        final existing = await materialRepo.getReferences(actualNovelId);
         existing.add(ref);
-        await materialRepo.saveReferences(novelId, existing);
+        await materialRepo.saveReferences(actualNovelId, existing);
         break;
       default:
         break;
@@ -420,6 +445,8 @@ class NovelImportService {
       chapterCount: 0,
       totalWords: content.length,
       contentType: contentType,
+      novelId: actualNovelId,
+      novelTitle: actualNovelTitle,
     );
   }
 
@@ -723,6 +750,8 @@ class ImportResult {
   final int totalWords;
   final ImportContentType? contentType;
   final String? error;
+  final String? novelId;
+  final String? novelTitle;
 
   ImportResult({
     required this.success,
@@ -730,5 +759,7 @@ class ImportResult {
     this.totalWords = 0,
     this.contentType,
     this.error,
+    this.novelId,
+    this.novelTitle,
   });
 }
