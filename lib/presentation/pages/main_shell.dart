@@ -352,6 +352,17 @@ class _MainShellState extends ConsumerState<MainShell> {
                 }
               },
             ),
+            // AI工具按钮 - 点击跳转到AI聊天页面
+            IconButton(
+              icon: Icon(Icons.psychology, color: primaryColor, size: 22),
+              onPressed: () {
+                // 跳转到AI聊天页面，用户可以在这里访问所有AI工具
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AiChatPage()),
+                );
+              },
+            ),
             // 设置按钮
             IconButton(
               icon: Icon(Icons.settings, color: textPrimary, size: 22),
@@ -359,17 +370,6 @@ class _MainShellState extends ConsumerState<MainShell> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ProfilePage()),
-                );
-              },
-            ),
-            // AI工具按钮 - 简化版本，直接跳转到AI聊天页面的工具菜单
-            IconButton(
-              icon: Icon(Icons.psychology, color: primaryColor, size: 22),
-              onPressed: () {
-                // 直接跳转到AI聊天页面
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AiChatPage()),
                 );
               },
             ),
@@ -473,6 +473,18 @@ class _MainShellState extends ConsumerState<MainShell> {
                     cardBg2,
                     primaryColor,
                   ),
+                  
+                  const SizedBox(height: 8),
+                  _buildSectionLabel('AI工具', textSecondary),
+                  
+                  // AI工具分类 - 直接跳转到AI聊天页面的工具菜单
+                  _buildAiToolItem('写作统计', Icons.bar_chart, textPrimary, textTertiary, cardBg2),
+                  _buildAiToolItem('爽点报告', Icons.analytics, textPrimary, textTertiary, cardBg2),
+                  _buildAiToolItem('水文检测', Icons.water_drop, textPrimary, textTertiary, cardBg2),
+                  _buildAiToolItem('标题生成', Icons.title, textPrimary, textTertiary, cardBg2),
+                  _buildAiToolItem('全文审查', Icons.fact_check, textPrimary, textTertiary, cardBg2),
+                  _buildAiToolItem('润色引擎', Icons.auto_fix_high, textPrimary, textTertiary, cardBg2),
+                  _buildAiToolItem('Agent市场', Icons.store, textPrimary, textTertiary, cardBg2),
                 ],
               ),
             ),
@@ -1178,6 +1190,45 @@ class _MainShellState extends ConsumerState<MainShell> {
                 style: TextStyle(color: textPrimary, fontSize: 13),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建AI工具项 - 点击跳转到AI聊天页面
+  Widget _buildAiToolItem(
+    String label,
+    IconData icon,
+    Color textPrimary,
+    Color textTertiary,
+    Color cardBg2,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        setState(() => _sidebarOpen = false);
+        // 跳转到AI聊天页面，用户可以在这里访问所有AI工具
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AiChatPage()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        margin: const EdgeInsets.only(bottom: 2),
+        child: Row(
+          children: [
+            const SizedBox(width: 20),
+            Icon(icon, color: const Color(0xFF10A37F), size: 16),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(color: textPrimary, fontSize: 13),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: textTertiary, size: 16),
           ],
         ),
       ),
