@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/presentation/pages/ai/ai_chat_page.dart';
 import 'package:novel_ide/presentation/pages/profile/profile_page.dart';
+import 'package:novel_ide/presentation/pages/works/export_page.dart';
+import 'package:novel_ide/presentation/pages/materials/materials_tree_page.dart';
+import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
 import 'package:novel_ide/data/models/novel_model.dart';
 import 'package:novel_ide/data/models/chapter_model.dart';
 import 'package:novel_ide/data/models/volume_model.dart';
+import 'package:novel_ide/data/models/ai_config_model.dart';
+import 'package:novel_ide/data/models/ai_chat_session_model.dart';
 import 'package:novel_ide/data/repositories/volume_repository.dart';
 import 'package:novel_ide/data/repositories/chapter_repository.dart';
+import 'package:novel_ide/data/repositories/chat_history_repository.dart';
+import 'package:novel_ide/data/services/novel_import_service.dart';
 import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
+import 'package:novel_ide/presentation/widgets/top_notification.dart';
+import 'package:novel_ide/core/router.dart';
 
 /// GPT风格单页面聊天应用
 class MainShell extends ConsumerStatefulWidget {
@@ -28,24 +38,144 @@ class _MainShellState extends ConsumerState<MainShell> {
   final Map<String, List<Volume>> _loadedVolumes = {};
   final Map<String, List<Chapter>> _loadedChapters = {};
   
-  // 模型列表
-  static const List<_ModelItem> _models = [
-    _ModelItem('GLM-4.7-Flash', '内置免费', isFree: true),
-    _ModelItem('GLM-4.6V-Flash', '多模态', isFree: true),
-    _ModelItem('GLM-4.1V-Thinking', '思考版', isFree: true),
-    _ModelItem('GPT-4o', null),
-    _ModelItem('Claude Sonnet', null),
-    _ModelItem('DeepSeek V3', null),
-    _ModelItem('本地 Ollama', null),
-  ];
+  // 历史会话列表
+  final ChatHistoryRepository _historyRepo = ChatHistoryRepository();
+  List<AiChatSessionModel> _chatSessions = [];
+  bool _sessionsLoaded = false;
   
-  String _selectedModel = 'GLM-4.7-Flash';
+  // 当前选中的模型名称（用于显示）
+  String _selectedModelDisplay = 'GLM-4.7-Flash';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChatSessions();
+  }
+
+  /// 加载历史会话列表
+  Future<void> _loadChatSessions() async {
+    try {
+      final sessions = await _historyRepo.loadSessions();
+      if (mounted) {
+        setState(() {
+          _chatSessions = sessions;
+          _sessionsLoaded = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Load chat sessions error: $e');
+      if (mounted) {
+        setState(() => _sessionsLoaded = true);
+      }
+    }
+  }
+
+  /// 触发新建会话
+  void _triggerNewSession() {
+    // 通过增加触发器值来通知 AiChatPage 新建会话
+    final currentTrigger = ref.read(newSessionTriggerProvider);
+    ref.read(newSessionTriggerProvider.notifier).state = currentTrigger + 1;
+    setState(() => _sidebarOpen = false);
+  }
+
+  /// 切换到指定会话
+  void _switchToSession(String sessionId) {
+    ref.read(currentSessionIdProvider.notifier).state = sessionId;
+    setState(() => _sidebarOpen = false);
+  }
+
+  /// 处理导入文件
+  Future<void> _handleImport() async {
+    setState(() => _sidebarOpen = false);
+    
+    final selectedNovel = ref.read(selectedNovelProvider);
+    
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['txt', 'md', 'docx', 'epub'],
+      );
+      
+      if (result == null || result.files.isEmpty) return;
+      
+      final filePath = result.files.first.path;
+      if (filePath == null) return;
+      
+      final importService = NovelImportService();
+      final preview = await importService.previewImport(filePath);
+      
+      if (!mounted) return;
+      
+      // 显示导入预览对话框
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('导入预览'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('类型: ${preview.detectedType}'),
+              Text('识别来源: ${preview.matchSource}'),
+              Text('章节数: ${preview.chapters.length}'),
+              Text('总字数: ${preview.totalWords}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('导入'),
+            ),
+          ],
+        ),
+      );
+      
+      if (confirm != true || !mounted) return;
+      
+      // 执行导入
+      final importResult = await importService.importFromFile(
+        novelId: selectedNovel?.id,
+        novelTitle: selectedNovel?.title,
+        filePath: filePath,
+      );
+      
+      if (!mounted) return;
+      
+      if (importResult.success) {
+        TopNotification.success(context, '导入成功：${importResult.chapterCount} 章');
+        // 刷新作品列表
+        ref.invalidate(novelsProvider);
+      } else {
+        TopNotification.error(context, '导入失败：${importResult.error}');
+      }
+    } catch (e) {
+      if (mounted) {
+        TopNotification.error(context, '导入失败: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final novels = ref.watch(novelsProvider).valueOrNull ?? [];
     final selectedNovel = ref.watch(selectedNovelProvider);
+    final aiConfigs = ref.watch(aiConfigsProvider);
+    final selectedAiConfig = ref.watch(selectedAiConfigProvider);
+    
+    // 更新显示的模型名称
+    if (selectedAiConfig != null) {
+      _selectedModelDisplay = selectedAiConfig.name;
+    } else if (aiConfigs.isNotEmpty) {
+      final textConfig = aiConfigs.where((c) => c.modelType == ModelType.text).firstOrNull;
+      if (textConfig != null) {
+        _selectedModelDisplay = textConfig.name;
+      }
+    }
     
     // GPT风格颜色
     const bgColor = Color(0xFF000000);
@@ -197,9 +327,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             // 新建按钮
             IconButton(
               icon: Icon(Icons.edit, color: textPrimary, size: 22),
-              onPressed: () {
-                // TODO: 新建会话
-              },
+              onPressed: _triggerNewSession,
             ),
             // 设置按钮
             IconButton(
@@ -242,10 +370,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           Padding(
             padding: const EdgeInsets.all(14),
             child: GestureDetector(
-              onTap: () {
-                setState(() => _sidebarOpen = false);
-                // TODO: 新建会话
-              },
+              onTap: _triggerNewSession,
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -274,11 +399,20 @@ class _MainShellState extends ConsumerState<MainShell> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 历史会话
+                  // 历史会话（从真实数据源读取）
                   _buildSectionLabel('历史会话', textSecondary),
-                  _buildHistoryItem('都市神医开篇讨论', '今天 14:30', textPrimary, textTertiary, cardBg2),
-                  _buildHistoryItem('大纲优化建议', '昨天 20:15', textPrimary, textTertiary, cardBg2),
-                  _buildHistoryItem('角色关系梳理', '5月28日', textPrimary, textTertiary, cardBg2),
+                  if (_chatSessions.isEmpty && _sessionsLoaded)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text('暂无历史会话', style: TextStyle(color: textTertiary, fontSize: 12)),
+                    )
+                  else
+                    ..._chatSessions.take(10).map((session) => _buildHistoryItemFromModel(
+                      session,
+                      textPrimary,
+                      textTertiary,
+                      cardBg2,
+                    )),
                   
                   const SizedBox(height: 8),
                   _buildSectionLabel('作品', textSecondary),
@@ -322,7 +456,18 @@ class _MainShellState extends ConsumerState<MainShell> {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       setState(() => _sidebarOpen = false);
-                      // TODO: 导出
+                      // 跳转到导出页面
+                      final novel = ref.read(selectedNovelProvider);
+                      if (novel != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ExportPage(novelId: novel.id, novelTitle: novel.title),
+                          ),
+                        );
+                      } else {
+                        TopNotification.show(context, '请先选择一部作品');
+                      }
                     },
                     icon: const Icon(Icons.upload, size: 16),
                     label: const Text('导出'),
@@ -336,10 +481,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      setState(() => _sidebarOpen = false);
-                      // TODO: 导入
-                    },
+                    onPressed: _handleImport,
                     icon: const Icon(Icons.download, size: 16),
                     label: const Text('导入'),
                     style: OutlinedButton.styleFrom(
@@ -404,6 +546,58 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
+  /// 从会话模型构建历史会话项
+  Widget _buildHistoryItemFromModel(
+    AiChatSessionModel session,
+    Color textPrimary,
+    Color textTertiary,
+    Color cardBg2,
+  ) {
+    final currentSessionId = ref.watch(currentSessionIdProvider);
+    final isSelected = currentSessionId == session.id;
+    
+    // 格式化时间
+    String timeStr;
+    final now = DateTime.now();
+    final updatedAt = session.updatedAt;
+    if (now.year == updatedAt.year && now.month == updatedAt.month && now.day == updatedAt.day) {
+      timeStr = '今天 ${updatedAt.hour.toString().padLeft(2, '0')}:${updatedAt.minute.toString().padLeft(2, '0')}';
+    } else if (now.year == updatedAt.year && now.month == updatedAt.month && now.day - updatedAt.day == 1) {
+      timeStr = '昨天 ${updatedAt.hour.toString().padLeft(2, '0')}:${updatedAt.minute.toString().padLeft(2, '0')}';
+    } else {
+      timeStr = '${updatedAt.month}月${updatedAt.day}日';
+    }
+    
+    return GestureDetector(
+      onTap: () => _switchToSession(session.id),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        margin: const EdgeInsets.only(bottom: 2),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF2A3A2A) : cardBg2,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              session.title,
+              style: TextStyle(color: textPrimary, fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              timeStr,
+              style: TextStyle(color: textTertiary, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildNovelNode({
     required Novel novel,
     required Color textPrimary,
@@ -422,6 +616,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       children: [
         GestureDetector(
           onTap: () => _toggleNovelExpand(novel.id),
+          onLongPress: () => _showNovelContextMenu(novel),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -479,6 +674,169 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
           ),
       ],
+    );
+  }
+
+  /// 显示作品长按菜单
+  void _showNovelContextMenu(Novel novel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(color: const Color(0xFF444444), borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(novel.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.add, color: Colors.white),
+                title: const Text('新建卷', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showNewVolumeDialog(novel);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit, color: Colors.white),
+                title: const Text('重命名作品', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showRenameNovelDialog(novel);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('删除作品', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showDeleteNovelConfirm(novel);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 新建卷对话框
+  void _showNewVolumeDialog(Novel novel) {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('新建卷', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: ctrl,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: '卷名称',
+            hintStyle: TextStyle(color: Colors.grey),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () async {
+              if (ctrl.text.trim().isEmpty) return;
+              final volumeRepo = ref.read(volumeRepoProvider);
+              await volumeRepo.createVolume(
+                novelId: novel.id,
+                title: ctrl.text.trim(),
+                orderIndex: (_loadedVolumes[novel.id]?.length ?? 0),
+              );
+              Navigator.pop(ctx);
+              // 刷新卷列表
+              final volumes = await volumeRepo.getVolumesByNovel(novel.id);
+              setState(() {
+                _loadedVolumes[novel.id] = volumes;
+              });
+              TopNotification.success(context, '已创建卷：${ctrl.text.trim()}');
+            },
+            child: const Text('创建'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 重命名作品对话框
+  void _showRenameNovelDialog(Novel novel) {
+    final ctrl = TextEditingController(text: novel.title);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('重命名作品', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: ctrl,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: '作品名称',
+            hintStyle: TextStyle(color: Colors.grey),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () async {
+              if (ctrl.text.trim().isEmpty) return;
+              final novelRepo = ref.read(novelRepoProvider);
+              await novelRepo.updateNovelTitle(novel.id, ctrl.text.trim());
+              Navigator.pop(ctx);
+              // 刷新作品列表
+              ref.invalidate(novelsProvider);
+              TopNotification.success(context, '已重命名');
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 删除作品确认
+  void _showDeleteNovelConfirm(Novel novel) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('删除作品', style: TextStyle(color: Colors.white)),
+        content: Text('确定要删除「${novel.title}」吗？此操作不可恢复。', style: const TextStyle(color: Colors.grey)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              final novelRepo = ref.read(novelRepoProvider);
+              await novelRepo.deleteNovel(novel.id);
+              Navigator.pop(ctx);
+              // 清除选中状态
+              if (ref.read(selectedNovelProvider)?.id == novel.id) {
+                ref.read(selectedNovelProvider.notifier).state = null;
+              }
+              // 刷新作品列表
+              ref.invalidate(novelsProvider);
+              TopNotification.success(context, '已删除');
+            },
+            child: const Text('删除'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -626,6 +984,11 @@ class _MainShellState extends ConsumerState<MainShell> {
     return GestureDetector(
       onTap: () {
         setState(() => _sidebarOpen = false);
+        // 跳转到资料库页面
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MaterialsTreePage()),
+        );
       },
       child: Container(
         width: double.infinity,
@@ -659,6 +1022,43 @@ class _MainShellState extends ConsumerState<MainShell> {
     required Color primaryColor,
     required Color dividerColor,
   }) {
+    final aiConfigs = ref.watch(aiConfigsProvider);
+    final selectedConfig = ref.watch(selectedAiConfigProvider);
+    final textConfigs = aiConfigs.where((c) => c.modelType == ModelType.text).toList();
+    
+    // 如果没有配置，显示提示
+    if (textConfigs.isEmpty) {
+      return Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: cardBg,
+          border: Border.all(color: const Color(0xFF333333)),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(color: Colors.black45, blurRadius: 32),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('暂无AI模型配置', style: TextStyle(color: textSecondary, fontSize: 14)),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () {
+                setState(() => _modelDropdownOpen = false);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+              },
+              child: const Text('去配置'),
+            ),
+          ],
+        ),
+      );
+    }
+    
     return Container(
       width: 280,
       decoration: BoxDecoration(
@@ -673,10 +1073,12 @@ class _MainShellState extends ConsumerState<MainShell> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ..._models.map((model) => GestureDetector(
+          ...textConfigs.map((config) => GestureDetector(
             onTap: () {
+              // 更新选中的AI配置
+              ref.read(selectedAiConfigProvider.notifier).state = config;
               setState(() {
-                _selectedModel = model.name;
+                _selectedModelDisplay = config.name;
                 _modelDropdownOpen = false;
               });
             },
@@ -684,16 +1086,16 @@ class _MainShellState extends ConsumerState<MainShell> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: _selectedModel == model.name ? cardBg2 : Colors.transparent,
+                color: selectedConfig?.id == config.id ? cardBg2 : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
                   Text(
-                    model.name,
+                    config.name,
                     style: TextStyle(color: textPrimary, fontSize: 14),
                   ),
-                  if (model.tag != null) ...[
+                  if (config.modelName.contains('GLM') || config.modelName.contains('glm')) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -702,13 +1104,13 @@ class _MainShellState extends ConsumerState<MainShell> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        model.tag!,
+                        '内置',
                         style: TextStyle(color: primaryColor, fontSize: 10),
                       ),
                     ),
                   ],
                   const Spacer(),
-                  if (_selectedModel == model.name)
+                  if (selectedConfig?.id == config.id)
                     Icon(Icons.check, color: primaryColor, size: 18),
                 ],
               ),
@@ -768,12 +1170,4 @@ class _MainShellState extends ConsumerState<MainShell> {
       }
     }
   }
-}
-
-class _ModelItem {
-  final String name;
-  final String? tag;
-  final bool isFree;
-  
-  const _ModelItem(this.name, this.tag, {this.isFree = false});
 }

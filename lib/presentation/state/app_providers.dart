@@ -256,3 +256,13 @@ Future<void> loadAllData(WidgetRef ref) async {
 final statsRepoProvider = Provider((ref) => StatsRepository());
 final todayWordsProvider = StateProvider<int>((ref) => 0);
 final totalWordsProvider = StateProvider<int>((ref) => 0);
+
+// --- Shared State for GPT-style UI ---
+/// 当前会话ID（用于 MainShell 和 AiChatPage 共享状态）
+final currentSessionIdProvider = StateProvider<String?>((ref) => null);
+
+/// 侧边栏打开状态
+final sidebarOpenProvider = StateProvider<bool>((ref) => false);
+
+/// 新建会话触发器（用于 MainShell 触发 AiChatPage 新建会话）
+final newSessionTriggerProvider = StateProvider<int>((ref) => 0);

@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/data/models/tomato_agent_model.dart';
 import 'package:novel_ide/data/models/ai_chat_session_model.dart';
 import 'package:novel_ide/data/models/proactive_question_model.dart';
+import 'package:novel_ide/data/models/writing_skill_model.dart';
+import 'package:novel_ide/data/models/tomato_preset_model.dart';
 import 'package:novel_ide/presentation/state/app_providers.dart';
 import 'package:novel_ide/data/services/ai_service.dart';
 import 'package:novel_ide/data/services/novel_memory.dart';
@@ -14,9 +18,10 @@ import 'package:novel_ide/data/services/agent_tool_executors.dart';
 import 'package:novel_ide/data/services/voice_service.dart';
 import 'package:novel_ide/data/services/skill_matcher.dart';
 import 'package:novel_ide/data/services/fuzzy_need_detector.dart';
-import 'package:novel_ide/data/models/writing_skill_model.dart';
 import 'package:novel_ide/data/repositories/chat_history_repository.dart';
 import 'package:novel_ide/presentation/pages/ai/voice_call_page.dart';
+import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
+import 'package:novel_ide/presentation/pages/profile/profile_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/presentation/widgets/skill_indicator.dart';
 import 'package:novel_ide/presentation/widgets/proactive_question_dialog.dart';
@@ -69,6 +74,15 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
     WidgetsBinding.instance.addObserver(this);
     _initVoice();
     _loadHistory();
+    
+    // 监听新建会话触发器
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listen<int>(newSessionTriggerProvider, (previous, next) {
+        if (next != previous && next > 0) {
+          _newSession();
+        }
+      });
+    });
   }
 
   @override
@@ -682,14 +696,29 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   crossAxisSpacing: 10,
                   childAspectRatio: 1.0,
                   children: [
-                    _buildSheetItem(Icons.mic, '语音输入', '语音转文字', () => Navigator.pop(ctx)),
-                    _buildSheetItem(Icons.attach_file, '上传文件', 'TXT/DOCX/PDF', () => Navigator.pop(ctx)),
+                    _buildSheetItem(Icons.mic, '语音输入', '开发中', () {
+                      Navigator.pop(ctx);
+                      TopNotification.show(context, '语音输入功能开发中', isSuccess: true);
+                    }),
+                    _buildSheetItem(Icons.attach_file, '上传文件', 'TXT/DOCX/PDF', () {
+                      Navigator.pop(ctx);
+                      _handleFileUpload();
+                    }),
                     _buildSheetItem(Icons.library_books, '选择资料', '发给AI上下文', () { Navigator.pop(ctx); _showMaterialPicker(); }),
-                    _buildSheetItem(Icons.description, '选择模板', '写作模板库', () => Navigator.pop(ctx)),
+                    _buildSheetItem(Icons.description, '选择模板', '写作模板库', () {
+                      Navigator.pop(ctx);
+                      TopNotification.show(context, '模板功能开发中', isSuccess: true);
+                    }),
                     _buildSheetItem(Icons.local_fire_department, '番茄写作', '风格预设', () => Navigator.pop(ctx)),
                     _buildSheetItem(Icons.phone, '语音通话', '实时AI对话', () { Navigator.pop(ctx); _openVoiceCall(); }),
-                    _buildSheetItem(Icons.bar_chart, '写作统计', '字数趋势', () => Navigator.pop(ctx)),
-                    _buildSheetItem(Icons.settings, '更多设置', '模型/外观/数据', () => Navigator.pop(ctx)),
+                    _buildSheetItem(Icons.bar_chart, '写作统计', '字数趋势', () {
+                      Navigator.pop(ctx);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsPage()));
+                    }),
+                    _buildSheetItem(Icons.settings, '更多设置', '模型/外观/数据', () {
+                      Navigator.pop(ctx);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+                    }),
                   ],
                 ),
               ),
@@ -706,6 +735,49 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         ),
       ),
     );
+  }
+
+  /// 处理文件上传
+  Future<void> _handleFileUpload() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['txt', 'md', 'docx', 'pdf'],
+      );
+      
+      if (result == null || result.files.isEmpty) return;
+      
+      final filePath = result.files.first.path;
+      if (filePath == null) return;
+      
+      final file = File(filePath);
+      if (!await file.exists()) return;
+      
+      // 读取文件内容
+      String content = '';
+      final ext = filePath.split('.').last.toLowerCase();
+      
+      if (ext == 'txt' || ext == 'md') {
+        content = await file.readAsString();
+      } else {
+        // 对于 docx/pdf，暂时只显示文件名
+        TopNotification.show(context, '暂不支持该格式，请使用TXT文件');
+        return;
+      }
+      
+      if (content.length > 5000) {
+        content = content.substring(0, 5000) + '\n...(内容过长已截断)';
+      }
+      
+      // 将文件内容插入输入框
+      setState(() {
+        _inputCtrl.text = '[上传文件：${result.files.first.name}]\n\n$content\n\n请帮我分析以上内容。';
+      });
+      
+      TopNotification.success(context, '已读取文件：${result.files.first.name}');
+    } catch (e) {
+      TopNotification.error(context, '读取文件失败: $e');
+    }
   }
 
   Widget _buildSheetItem(IconData icon, String title, String subtitle, VoidCallback onTap) {
@@ -794,63 +866,82 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Widget _buildSkillSection(BuildContext ctx) {
-    final skills = [
-      ('金庸风格', '武侠文风'),
-      ('爽文模板', '快节奏升级'),
-      ('文学润色', '提升文笔'),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text('Skill（写作技巧）', style: TextStyle(color: textSecondary, fontSize: 12)),
-        ),
-        SizedBox(
-          height: 70,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: skills.length,
-            itemBuilder: (context, index) {
-              final (name, desc) = skills[index];
-              return GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  width: 120,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: cardBg2,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF333333)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(name, style: const TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 2),
-                      Text(desc, style: const TextStyle(color: textTertiary, fontSize: 11)),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+    // 从 Provider 读取真实技能列表
+    final skillsAsync = ref.watch(skillRepoProvider);
+    
+    return FutureBuilder<List<WritingSkill>>(
+      future: skillsAsync.getAllSkills(),
+      builder: (context, snapshot) {
+        final allSkills = snapshot.data ?? [];
+        final enabledSkills = allSkills.where((s) => s.isEnabled).toList();
+        final displaySkills = enabledSkills.take(5).toList();
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text('Skill（写作技巧）', style: TextStyle(color: textSecondary, fontSize: 12)),
+            ),
+            SizedBox(
+              height: 70,
+              child: displaySkills.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('暂无启用的技能', style: TextStyle(color: textTertiary, fontSize: 12)),
+                    )
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: displaySkills.length,
+                      itemBuilder: (context, index) {
+                        final skill = displaySkills[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            // 应用技能到当前会话
+                            ref.read(currentPresetProvider.notifier).state = TomatoPreset(
+                              id: skill.id,
+                              name: skill.name,
+                              description: skill.description ?? '',
+                              systemPrompt: skill.systemPrompt ?? '',
+                            );
+                            TopNotification.success(context, '已应用技能：${skill.name}');
+                          },
+                          child: Container(
+                            width: 120,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: cardBg2,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF333333)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(skill.name, style: const TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 2),
+                                Text(skill.description ?? '', style: const TextStyle(color: textTertiary, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildTomatoSection(BuildContext ctx) {
-    final presets = [
-      ('都市爽文', '快节奏升级流'),
-      ('言情甜宠', '轻松甜蜜'),
-      ('悬疑推理', '烧脑反转'),
-    ];
-
+    // 从 Provider 读取真实番茄预设
+    final presets = ref.watch(tomatoPresetsProvider);
+    final displayPresets = presets.take(5).toList();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -860,36 +951,46 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         ),
         SizedBox(
           height: 70,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: presets.length,
-            itemBuilder: (context, index) {
-              final (name, desc) = presets[index];
-              return GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  width: 120,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: cardBg2,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF333333)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(name, style: const TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 2),
-                      Text(desc, style: const TextStyle(color: textTertiary, fontSize: 11)),
-                    ],
-                  ),
+          child: displayPresets.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('暂无预设', style: TextStyle(color: textTertiary, fontSize: 12)),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: displayPresets.length,
+                  itemBuilder: (context, index) {
+                    final preset = displayPresets[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        // 应用预设
+                        ref.read(currentPresetProvider.notifier).state = preset;
+                        TopNotification.success(context, '已应用预设：${preset.name}');
+                      },
+                      child: Container(
+                        width: 120,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: cardBg2,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF333333)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(preset.name, style: const TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 2),
+                            Text(preset.description, style: const TextStyle(color: textTertiary, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
