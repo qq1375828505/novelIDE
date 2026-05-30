@@ -126,7 +126,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => RelationshipGraphPage(novelId: selectedNovel.id),
+                  builder: (_) => RelationshipGraphPage(novelId: selectedNovel.id, novelTitle: selectedNovel.title),
                 ),
               );
             },
