@@ -48,7 +48,7 @@
 | 对比项 | 纯文本编辑器 | WebView 富文本编辑器 |
 |--------|------------|-------------------|
 | **定位** | 轻量极速，专注码字 | 专业排版，发布级作品 |
-| **底层实现** | Flutter 原生 `TextField` | WebView + 起点作家 `rich_editor.js` |
+| **底层实现** | Flutter 原生 `TextField` | WebView + 自研富文本引擎 |
 | **文本格式** | 纯文本 / Markdown | 加粗、斜体、H1/H2标题、引用块、有序/无序列表 |
 | **插入功能** | 文字输入 | 图片、超链接、@提及角色、#话题标签 |
 | **工具栏** | 底部9按钮可滚动快捷栏 | 顶部格式工具栏（B/I/H1/H2/引用/列表/链接/图片/撤销/重做） |
@@ -62,9 +62,9 @@
 Flutter 层 (Dart)                    WebView 层 (JavaScript)
 ┌──────────────────────┐            ┌──────────────────────┐
 │  RichEditorPage      │◄──────────►│  editor.html         │
-│  ├─ WebViewController│  Channel   │  ├─ rich_editor.js   │
+│  ├─ WebViewController│  Channel   │  ├─ editor.js       │
 │  ├─ 格式工具栏       │◄─JSON──►  │  ├─ style.css        │
-│  └─ FlutterBridge    │           │  └─ WeReadApi.js     │
+│  └─ FlutterBridge    │           │  └─ editorBridge.js │
 └──────────────────────┘           └──────────────────────┘
 
 JS → Flutter: onTextChange / onSelectionChange / onAtClicked
@@ -124,7 +124,7 @@ Flutter → JS: RE.setBold() / RE.setHeading() / RE.insertImage()
 - **爆款标题生成** — AI 根据章节内容生成多个候选标题
 
 #### 4.4 自定义 Agent
-- **Agent 市场** — 内置番茄专区智能体（大纲生成器、爽点检查器等）
+- **Agent 市场** — 内置多种写作智能体（大纲生成器、爽点检查器等）
 - **创建 Agent** — 自定义名称、Emoji 图标、系统提示词、参数模板
 - **导入 Agent** — 从 JSON 文件导入已有 Agent 配置
 - **运行 Agent** — 参数输入 → 聊天式交互 → 结果展示
@@ -134,15 +134,15 @@ Flutter → JS: RE.setBold() / RE.setHeading() / RE.insertImage()
 #### 4.5 多模型支持
 | 协议 | 兼容模型 |
 |------|---------|
-| OpenAI 兼容 | GPT-4o / GPT-3.5 / DeepSeek / 通义千问 / 智谱 GLM / 本地 Ollama 等 |
-| Anthropic | Claude Sonnet / Claude Opus |
+| 兼容协议 | 智谱GLM / DeepSeek / 通义千问 / 本地 Ollama 等 |
+| 多模态 | 支持图片理解的多模态模型 |
 
 每个模型独立配置：名称、API 地址、模型名、API Key
 - **获取模型列表** — 一键从 API 端点拉取可用模型
 - **测试连接** — 验证 API 地址和 Key 是否正确
 - **自由切换** — 多个模型间一键切换，不同场景用不同模型
 
-#### 4.6 番茄风格预设
+#### 4.6 写作风格预设
 内置 25 个预设，覆盖主流网文风格：
 - **都市**：都市、职场、商战、校园、娱乐圈...
 - **玄幻**：仙侠、修真、洪荒、奇幻、末世...
@@ -283,7 +283,7 @@ Windows 版正在开发中，基于以下技术栈：
 |------|------|
 | Electron | 桌面应用框架 |
 | TypeScript | 业务逻辑 |
-| Monaco Editor | 代码级编辑器（VS Code 同款） |
+| Monaco Editor | 代码级编辑器 |
 | Tailwind CSS | UI 样式 |
 | electron-vite | 构建工具 |
 
@@ -313,10 +313,10 @@ Windows 版正在开发中，基于以下技术栈：
 |------|-------------------|-------------------|
 | **框架** | Flutter 3.32+ / Dart 3.8+ | Electron + TypeScript |
 | **UI** | Material 3 + Riverpod | Tailwind CSS |
-| **编辑器** | TextField + WebView(rich_editor.js) | Monaco Editor |
+| **编辑器** | TextField + WebView(自研引擎) | Monaco Editor |
 | **数据库** | SQLite (sqflite) | SQLite (better-sqlite3) |
 | **配置** | Hive + flutter_secure_storage | electron-store |
-| **网络** | Dio (OpenAI + Anthropic) | fetch/axios (同) |
+| **网络** | Dio (兼容主流AI接口格式) | fetch/axios (同) |
 | **打包** | APK | NSIS / AppImage / DMG |
 
 ### Android 项目结构
@@ -334,7 +334,7 @@ lib/
 │   ├── models/                        # Freezed 数据模型
 │   ├── datasources/                   # 数据库 + 文件 + 安全存储
 │   ├── repositories/                  # 数据仓库
-│   ├── presets/                       # 25个番茄预设
+│   ├── presets/                       # 25个写作风格预设
 │   └── services/                      # AI/校对/EPUB/导入/记忆/通知
 ├── presentation/
 │   ├── state/                         # Riverpod Providers
