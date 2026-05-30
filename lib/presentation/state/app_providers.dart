@@ -18,6 +18,7 @@ import 'package:novel_ide/data/repositories/skill_repository.dart';
 import 'package:novel_ide/data/datasources/database_helper.dart';
 import 'package:novel_ide/data/datasources/secure_storage_datasource.dart';
 import 'package:novel_ide/data/services/config_service.dart';
+import 'package:novel_ide/data/services/default_config_service.dart';
 
 final novelRepoProvider = Provider((ref) => NovelRepository());
 final chapterRepoProvider = Provider((ref) => ChapterRepository());
@@ -131,6 +132,39 @@ final customFoldersProvider = StateProvider<List<CustomMaterialFolder>>((ref) =>
 final aiConfigsProvider = StateProvider<List<AiConfig>>((ref) => []);
 final selectedAiConfigProvider = StateProvider<AiConfig?>((ref) => null);
 final selectedVoiceConfigProvider = StateProvider<AiConfig?>((ref) => null);
+
+// 游客模式配置（内置免费模型，开箱即用）
+final guestModeConfigProvider = Provider<AiConfig>((ref) {
+  return AiConfig(
+    id: 'guest_zhipu_glm-4.7-flash',
+    name: '智谱AI GLM-4.7-Flash (游客模式)',
+    apiUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    modelName: 'glm-4.7-flash',
+    protocol: ApiProtocol.openaiCompatible,
+    modelType: ModelType.text,
+  );
+});
+
+// 获取当前有效的AI配置（优先用户配置，否则使用游客模式）
+final effectiveAiConfigProvider = Provider<AiConfig?>((ref) {
+  final userConfig = ref.watch(selectedAiConfigProvider);
+  final guestConfig = ref.watch(guestModeConfigProvider);
+  final configs = ref.watch(aiConfigsProvider);
+  
+  // 如果用户有配置，优先使用
+  if (userConfig != null) return userConfig;
+  
+  // 如果数据库中有配置，使用第一个
+  if (configs.isNotEmpty) {
+    return configs.firstWhere(
+      (c) => c.modelType == ModelType.text,
+      orElse: () => configs.first,
+    );
+  }
+  
+  // 否则使用游客模式配置
+  return guestConfig;
+});
 
 // Network status
 final isOnlineProvider = StateProvider<bool>((ref) => true);

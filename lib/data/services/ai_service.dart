@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novel_ide/data/models/ai_config_model.dart';
 import 'package:novel_ide/data/services/cost_tracker.dart';
+import 'package:novel_ide/data/services/default_config_service.dart';
 
 /// Unified AI service with cost tracking.
 /// 自适应兼容所有主流 API 厂商（OpenAI / Anthropic / 小米MiMo / DeepSeek / 通义千问 / Moonshot 等）
@@ -134,7 +135,13 @@ class AiService {
   /// - x-api-key: xxx           → Anthropic Claude
   /// 服务端只会识别自己需要的头，其他头会被忽略
   Map<String, String> _buildHeaders(AiConfig config) {
-    final apiKey = config.apiKey ?? '';
+    // 获取API Key：优先使用配置的，否则使用内置免费Key（游客模式）
+    String apiKey = config.apiKey ?? '';
+    if (apiKey.isEmpty && config.id.startsWith('guest_')) {
+      // 游客模式：使用内置免费API Key
+      apiKey = DefaultConfigService.getModelKey('glm-4.7-flash') ?? '';
+    }
+    
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };

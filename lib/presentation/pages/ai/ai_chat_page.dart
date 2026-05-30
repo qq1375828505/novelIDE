@@ -154,7 +154,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
     // Auto-create session if none
     if (_currentSession == null) _newSession();
 
-    final config = ref.read(selectedAiConfigProvider);
+    final config = ref.read(effectiveAiConfigProvider);
     if (config == null) {
       TopNotification.error(context, '请先在"我的"页面配置AI模型');
       return;
@@ -934,10 +934,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                           alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                           child: GestureDetector(
                             onLongPress: () {
-                              Clipboard.setData(ClipboardData(text: msg['content']!));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('已复制到剪贴板'), duration: Duration(seconds: 1)),
-                              );
+                              _showMessageMenu(context, index, msg['content']!);
                             },
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -1200,7 +1197,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
   /// 调用Agent — 用Agent的system prompt + 当前对话上下文
   Future<void> _invokeAgent(TomatoAgent agent) async {
-    final config = ref.read(selectedAiConfigProvider);
+    final config = ref.read(effectiveAiConfigProvider);
     if (config == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('请先在"我的"页面配置AI模型')),
@@ -1279,7 +1276,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
   /// 执行工作流
   Future<void> _runWorkflow(Workflow workflow) async {
-    final config = ref.read(selectedAiConfigProvider);
+    final config = ref.read(effectiveAiConfigProvider);
     if (config == null) {
       TopNotification.error(context, '请先在"我的"页面配置AI模型');
       return;
@@ -1351,7 +1348,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
       TopNotification.error(context, '请先在设置中配置语音模型');
       return;
     }
-    final config = ref.read(selectedAiConfigProvider);
+    final config = ref.read(effectiveAiConfigProvider);
     if (config == null) {
       TopNotification.error(context, '请先配置文本AI模型');
       return;
@@ -1380,6 +1377,101 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
     );
 
     _scrollToBottom();
+  }
+
+  /// 显示消息长按菜单（复制、撤回）
+  void _showMessageMenu(BuildContext context, int index, String content) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Colors.black87),
+                title: const Text('复制'),
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: content));
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('已复制到剪贴板'), duration: Duration(seconds: 1)),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('撤回', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _deleteMessage(index);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 删除单条消息
+  void _deleteMessage(int index) {
+    if (_currentSession == null || index < 0 || index >= _currentSession!.messages.length) return;
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('撤回消息'),
+        content: const Text('确定要撤回这条消息吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _currentSession!.messages.removeAt(index);
+                // 同时删除对应的技能匹配记录
+                _skillMatches.remove(index);
+                // 更新其他记录的索引
+                final newMatches = <int, List<WritingSkill>>{};
+                _skillMatches.forEach((key, value) {
+                  if (key < index) {
+                    newMatches[key] = value;
+                  } else if (key > index) {
+                    newMatches[key - 1] = value;
+                  }
+                });
+                _skillMatches.clear();
+                _skillMatches.addAll(newMatches);
+              });
+              _saveHistory();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('消息已撤回'), duration: Duration(seconds: 1)),
+              );
+            },
+            child: const Text('确定', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 去AI味：将AI生成的文本改写为自然人类风格

@@ -196,7 +196,7 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> with WidgetsBindingOb
     }
   }
 
-  void _loadSettings() {
+  void _loadSettings() async {
     try {
       final savedDark = ConfigService.isDarkMode;
       ref.read(darkModeProvider.notifier).state = savedDark;
@@ -204,7 +204,7 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> with WidgetsBindingOb
       ref.read(fontFamilyProvider.notifier).state = ConfigService.fontFamily;
       ref.read(lineHeightProvider.notifier).state = ConfigService.lineHeight;
       // Load persisted data (AI configs, etc.)
-      loadAllData(ref);
+      await loadAllData(ref);
     } catch (e) {
       debugPrint('Load settings error: $e');
     }
