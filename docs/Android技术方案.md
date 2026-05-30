@@ -41,7 +41,7 @@ Android版可以独立完成：
 | 语音输入 | **speech_to_text** | 语音转文字输入（麦克风按钮） |
 | 语音通话 | **Android原生TTS (MethodChannel)** | 实时语音通话界面，零额外依赖 |
 | 写作技能 | **Skill系统 (writing_skill_model.dart)** | AI自动识别写作场景，加载对应技能提示词 |
-| Agent工具 | **29个工具执行器 (agent_tool_executors.dart)** | 章节/资料/AI/搜索/导出全覆盖 |
+| Agent工具 | **35+工具执行器 (agent_tool_executors.dart)** | 章节/资料/AI/搜索/导出/删除/更新全覆盖 |
 | 工作流引擎 | **workflow_engine.dart** | 多步任务自动化流水线 |
 | 网络 | Dio | 直接请求用户配置的AI API、搜索API |
 | 安全 | flutter_secure_storage | API Key加密 |
@@ -2567,11 +2567,11 @@ EPUB = ZIP 压缩包，包含：
 - 用户可自定义和管理技能
 - 技能指示器显示当前激活的技能
 
-### 38.3 Workspace Agent + 29个工具
+### 38.3 Workspace Agent + 35+工具
 
 **文件**：
 - `lib/data/services/workspace_agent.dart` — 全能AI助手
-- `lib/data/services/agent_tool_executors.dart` — 29个工具执行器
+- `lib/data/services/agent_tool_executors.dart` — 35+工具执行器
 
 **工具分类**：
 - 章节工具：创建/读取/编辑/删除/拆分/合并章节
@@ -2580,6 +2580,9 @@ EPUB = ZIP 压缩包，包含：
 - 搜索工具：联网搜索/搜索资料库
 - 导出工具：导出TXT/EPUB/记忆文件
 - 系统工具：获取统计/获取配置
+- 文本处理：Humanizer去AI味（基于维基百科AI写作特征指南，8大规则）
+- 删除工具：delete_character/setting/location/faction/item/hook/reference
+- 更新工具：update_character(含性格/外貌/背景)/update_setting/location/faction/item/reference
 
 ### 38.4 Workflow 自动化流水线
 
@@ -2672,4 +2675,57 @@ NovelProjects/
 - 全选/全不选控制所有可选项
 - 记忆包固定导出，不可取消
 - 所有文件保存为TXT，打包成ZIP
+
+---
+
+## 41. V2.0.0 — 人物关系图 + 自定义文件夹 + Humanizer
+
+### 41.1 人物关系图
+
+**文件**：`lib/presentation/pages/materials/relationship_graph_page.dart`
+
+- Canvas绘制角色关系网络
+- 可拖动节点，自由调整布局
+- 角色按身份着色（主角蓝/女主粉/反派红/师父绿/配角灰）
+- 18种预设关系类型
+- 从资料树"角色"文件夹长按进入
+- 关系和位置持久化到JSON
+
+### 41.2 自定义文件夹持久化
+
+**文件**：`lib/data/models/material_models.dart` + `material_repository.dart`
+
+- `CustomMaterialFolder` / `CustomMaterialItem` 模型
+- JSON文件存储在 `NovelProjects/{id}_{title}/custom_folders.json`
+- 重启不丢失
+
+### 41.3 AI对话选择资料上下文
+
+**文件**：`lib/presentation/pages/ai/ai_chat_page.dart`
+
+- "+"菜单新增"选择资料"入口
+- 多选面板（角色/设定/章节/伏笔 4个tab）
+- 选中项自动拼入对话上下文
+
+### 41.4 Humanizer去AI味Agent
+
+**文件**：`workspace_agent.dart` + `agent_tool_executors.dart` + `ai_chat_page.dart`
+
+- 基于维基百科"AI写作特征"指南
+- 8大规则：过度强调词/空洞评价/三项排比/破折号滥用/虚假归因/句子同质化/缺乏个性/保留核心含义
+- AI对话页"+"菜单新增"去AI味"入口
+- 工具执行器做输入校验，实际改写由AI完成
+
+### 41.5 Agent工具补齐
+
+- 新增7个删除工具：delete_character/setting/location/faction/item/hook/reference
+- 新增5个更新工具：update_setting/location/faction/item/reference
+- update_character扩展支持personality/appearance/background
+- 工具总数从29个增加到35+
+
+### 41.6 安全加固
+
+- 签名密码移至 `key.properties`（gitignored）
+- ProGuard/R8代码混淆启用
+- 从git历史中清除keystore文件（git-filter-repo）
 
