@@ -40,21 +40,27 @@ class _WorksPageState extends ConsumerState<WorksPage> {
     final novelsAsync = ref.watch(novelsProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
         title: const Text(
           '网文写作IDE',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_upload_outlined),
+            icon: const Icon(Icons.file_upload_outlined, color: Colors.white),
             tooltip: '导入作品',
             onPressed: () => _showImportDialog(context, ref),
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.settings_outlined, color: Colors.white),
             tooltip: '设置',
             onPressed: () {
               Navigator.push(
@@ -87,8 +93,9 @@ class _WorksPageState extends ConsumerState<WorksPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateNovelDialog(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('新建作品'),
+        backgroundColor: const Color(0xFF10A37F),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('新建作品', style: TextStyle(color: Colors.white)),
       ),
     );
   }

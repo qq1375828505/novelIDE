@@ -103,18 +103,36 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     );
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text('${selectedNovel.title} · 资料库'),
+        backgroundColor: Colors.black,
+        elevation: 0,
+        title: Text(
+          '${selectedNovel.title} · 资料库',
+          style: const TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
             icon: _isGeneratingOutline
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.auto_awesome),
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10A37F)))
+                : const Icon(Icons.auto_awesome, color: Colors.white),
             tooltip: 'AI生成大纲',
             onPressed: _isGeneratingOutline ? null : () => _generateOutline(selectedNovel.id),
           ),
           IconButton(
-            icon: const Icon(Icons.file_download_outlined),
+            icon: const Icon(Icons.people_outline, color: Colors.white),
+            tooltip: '角色关系图',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RelationshipGraphPage(novelId: selectedNovel.id),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined, color: Colors.white),
             tooltip: '打包',
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(
