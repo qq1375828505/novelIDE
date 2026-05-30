@@ -3,6 +3,9 @@ import 'package:novel_ide/presentation/pages/main_shell.dart';
 import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
 import 'package:novel_ide/presentation/pages/writing/rich_editor_page.dart';
 import 'package:novel_ide/presentation/pages/writing/global_search_page.dart';
+import 'package:novel_ide/presentation/pages/writing/proofread_page.dart';
+import 'package:novel_ide/presentation/pages/outline/outline_page.dart';
+import 'package:novel_ide/presentation/pages/ai/full_text_review_page.dart';
 import 'package:novel_ide/presentation/pages/tomato/agent_marketplace_page.dart';
 import 'package:novel_ide/presentation/pages/works/export_page.dart';
 import 'package:novel_ide/presentation/pages/materials/materials_tree_page.dart';
@@ -15,6 +18,9 @@ class AppRouter {
   static const String richEditor = '/rich-editor';
   static const String agents = '/agents';
   static const String globalSearch = '/global-search';
+  static const String outline = '/outline';
+  static const String proofread = '/proofread';
+  static const String fullTextReview = '/full-text-review';
   static const String export = '/export';
   static const String materials = '/materials';
   static const String stats = '/stats';
@@ -48,6 +54,23 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) => GlobalSearchPage(
+            novelId: args?['novelId'] ?? '',
+            novelTitle: args?['novelTitle'] ?? '',
+          ),
+        );
+      case outline:
+        return MaterialPageRoute(builder: (_) => const OutlinePage());
+      case proofread:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => ProofreadPage(
+            novelId: args?['novelId'] ?? '',
+          ),
+        );
+      case fullTextReview:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => FullTextReviewPage(
             novelId: args?['novelId'] ?? '',
             novelTitle: args?['novelTitle'] ?? '',
           ),

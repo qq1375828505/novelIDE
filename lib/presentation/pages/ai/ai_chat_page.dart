@@ -20,6 +20,9 @@ import 'package:novel_ide/data/services/skill_matcher.dart';
 import 'package:novel_ide/data/services/fuzzy_need_detector.dart';
 import 'package:novel_ide/data/repositories/chat_history_repository.dart';
 import 'package:novel_ide/presentation/pages/ai/voice_call_page.dart';
+import 'package:novel_ide/presentation/pages/ai/full_text_review_page.dart';
+import 'package:novel_ide/presentation/pages/ai/polish_engine_page.dart';
+import 'package:novel_ide/presentation/pages/writing/proofread_page.dart';
 import 'package:novel_ide/presentation/pages/stats/stats_page.dart';
 import 'package:novel_ide/presentation/pages/profile/profile_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
@@ -134,6 +137,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Future<void> _initVoice() async {
+    await _voiceService.init();
     if (mounted) setState(() {});
   }
 
@@ -696,9 +700,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   crossAxisSpacing: 10,
                   childAspectRatio: 1.0,
                   children: [
-                    _buildSheetItem(Icons.mic, '语音输入', '开发中', () {
+                    _buildSheetItem(Icons.mic, '语音输入', '语音转文字', () {
                       Navigator.pop(ctx);
-                      TopNotification.show(context, '语音输入功能开发中', isSuccess: true);
+                      _handleMic();
                     }),
                     _buildSheetItem(Icons.attach_file, '上传文件', 'TXT/DOCX/PDF', () {
                       Navigator.pop(ctx);
@@ -707,7 +711,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                     _buildSheetItem(Icons.library_books, '选择资料', '发给AI上下文', () { Navigator.pop(ctx); _showMaterialPicker(); }),
                     _buildSheetItem(Icons.description, '选择模板', '写作模板库', () {
                       Navigator.pop(ctx);
-                      TopNotification.show(context, '模板功能开发中', isSuccess: true);
+                      _showWritingTemplates();
                     }),
                     _buildSheetItem(Icons.local_fire_department, '番茄写作', '风格预设', () => Navigator.pop(ctx)),
                     _buildSheetItem(Icons.phone, '语音通话', '实时AI对话', () { Navigator.pop(ctx); _openVoiceCall(); }),
@@ -718,6 +722,18 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                     _buildSheetItem(Icons.settings, '更多设置', '模型/外观/数据', () {
                       Navigator.pop(ctx);
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+                    }),
+                    _buildSheetItem(Icons.fact_check, '全文审查', '设定/角色/逻辑', () {
+                      Navigator.pop(ctx);
+                      _navigateToFullTextReview();
+                    }),
+                    _buildSheetItem(Icons.auto_fix_high, '润色引擎', '章节精修', () {
+                      Navigator.pop(ctx);
+                      _navigateToPolishEngine();
+                    }),
+                    _buildSheetItem(Icons.spellcheck, '校对', '错别字/标点', () {
+                      Navigator.pop(ctx);
+                      _navigateToProofread();
                     }),
                   ],
                 ),
@@ -804,13 +820,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Widget _buildAgentSection(BuildContext ctx) {
-    final agents = [
-      ('爽点检查器', '检测章节爽点分布', Icons.local_fire_department),
-      ('水文检测器', '找出注水段落', Icons.water_drop),
-      ('大纲生成器', '自动生成多卷大纲', Icons.list_alt),
-      ('标题生成器', '生成章节标题', Icons.title),
-      ('全文审查', '节奏/角色/逻辑审查', Icons.fact_check),
-    ];
+    final agents = ref.watch(tomatoAgentsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -821,45 +831,45 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         ),
         SizedBox(
           height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: agents.length,
-            itemBuilder: (context, index) {
-              final (name, desc, icon) = agents[index];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.pop(ctx);
-                  final agentList = ref.read(tomatoAgentsProvider);
-                  final agent = agentList.firstWhere(
-                    (a) => a.name.contains(name.replaceAll('器', '').replaceAll('查', '')),
-                    orElse: () => agentList.first,
-                  );
-                  _invokeAgent(agent);
-                },
-                child: Container(
-                  width: 120,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: cardBg2,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF333333)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(icon, color: primaryColor, size: 20),
-                      const SizedBox(height: 6),
-                      Text(name, style: const TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 2),
-                      Text(desc, style: const TextStyle(color: textTertiary, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
+          child: agents.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('暂无Agent', style: TextStyle(color: textTertiary, fontSize: 12)),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: agents.length,
+                  itemBuilder: (context, index) {
+                    final agent = agents[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _invokeAgent(agent);
+                      },
+                      child: Container(
+                        width: 120,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: cardBg2,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF333333)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(agent.icon, style: const TextStyle(fontSize: 20)),
+                            const SizedBox(height: 6),
+                            Text(agent.name, style: const TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 2),
+                            Text(agent.description, style: const TextStyle(color: textTertiary, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -999,8 +1009,162 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   void _handleMic() {
-    // TODO: 实现语音输入
-    TopNotification.show(context, '语音输入功能开发中', isSuccess: true);
+    if (!_voiceService.isAvailable) {
+      TopNotification.show(context, '当前设备不支持语音识别，请使用文字输入', isSuccess: false);
+      return;
+    }
+    _voiceService.onResult = (text) {
+      if (text.isNotEmpty && mounted) {
+        setState(() {
+          _inputCtrl.text = '${_inputCtrl.text}$text';
+        });
+      }
+    };
+    _voiceService.startListening();
+    TopNotification.success(context, '正在聆听...');
+  }
+
+  /// 显示写作模板选择
+  void _showWritingTemplates() {
+    final templates = [
+      {'name': '都市', 'prompt': '请帮我写一段都市风格的小说开头，主角是一个普通上班族，某天突然获得了超能力。'},
+      {'name': '玄幻', 'prompt': '请帮我构思一个玄幻世界设定，包括修炼体系、宗门势力和主角的金手指。'},
+      {'name': '言情', 'prompt': '请帮我写一段甜宠风格的言情开局，男女主角在咖啡店偶遇。'},
+      {'name': '悬疑', 'prompt': '请帮我设计一个悬疑推理的开篇，一个密室杀人案，所有嫌疑人都有不在场证明。'},
+      {'name': '历史', 'prompt': '请帮我写一段穿越历史题材的开头，主角穿越到唐朝，身份是一个落魄书生。'},
+      {'name': '科幻', 'prompt': '请帮我构思一个科幻设定，人类在22世纪发现了外星文明遗迹。'},
+      {'name': '游戏', 'prompt': '请帮我写一段游戏异世界题材的开头，主角在玩游戏时被传送到了游戏世界。'},
+      {'name': '仙侠', 'prompt': '请帮我设计一个仙侠世界，包括境界划分、法宝体系和天道法则。'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(color: const Color(0xFF444444), borderRadius: BorderRadius.circular(2)),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('选择写作模板', style: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: templates.length,
+                  itemBuilder: (context, index) {
+                    final t = templates[index];
+                    return ListTile(
+                      leading: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: cardBg2,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(t['name']!.substring(0, 1), style: const TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      title: Text('${t['name']}题材', style: const TextStyle(color: textPrimary, fontSize: 14)),
+                      subtitle: Text(t['prompt']!, style: const TextStyle(color: textTertiary, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        setState(() {
+                          _inputCtrl.text = t['prompt']!;
+                        });
+                        TopNotification.success(context, '已选择${t['name']}模板');
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 导航到全文审查页面
+  void _navigateToFullTextReview() {
+    final novel = ref.read(selectedNovelProvider);
+    if (novel == null) {
+      TopNotification.show(context, '请先选择一部作品再使用全文审查');
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FullTextReviewPage(
+          novelId: novel.id,
+          novelTitle: novel.title,
+        ),
+      ),
+    );
+  }
+
+  /// 导航到润色引擎页面
+  void _navigateToPolishEngine() {
+    final novel = ref.read(selectedNovelProvider);
+    if (novel == null) {
+      TopNotification.show(context, '请先选择一部作品再使用润色引擎');
+      return;
+    }
+    final chapter = ref.read(selectedChapterProvider);
+    if (chapter == null) {
+      TopNotification.show(context, '请先选择一个章节再使用润色引擎');
+      return;
+    }
+    // 读取章节内容
+    final chapterRepo = ref.read(chapterRepoProvider);
+    chapterRepo.getChapter(chapter.id).then((ch) {
+      if (ch != null && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PolishEnginePage(
+              chapterContent: ch.content ?? '',
+              novelTitle: novel.title,
+              onApply: (modifiedContent) {
+                // 更新章节内容
+                chapterRepo.updateChapter(ch.copyWith(content: modifiedContent));
+              },
+            ),
+          ),
+        );
+      } else if (mounted) {
+        TopNotification.show(context, '无法读取章节内容');
+      }
+    }).catchError((e) {
+      if (mounted) TopNotification.show(context, '读取章节失败: $e');
+    });
+  }
+
+  /// 导航到校对页面
+  void _navigateToProofread() {
+    final novel = ref.read(selectedNovelProvider);
+    if (novel == null) {
+      TopNotification.show(context, '请先选择一部作品再使用校对功能');
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProofreadPage(novelId: novel.id),
+      ),
+    );
   }
 
   /// 调用Agent

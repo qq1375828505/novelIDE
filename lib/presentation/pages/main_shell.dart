@@ -18,6 +18,8 @@ import 'package:novel_ide/data/repositories/chapter_repository.dart';
 import 'package:novel_ide/data/repositories/chat_history_repository.dart';
 import 'package:novel_ide/data/services/novel_import_service.dart';
 import 'package:novel_ide/presentation/pages/writing/editor_page.dart';
+import 'package:novel_ide/presentation/pages/writing/global_search_page.dart';
+import 'package:novel_ide/presentation/pages/outline/outline_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/core/router.dart';
 
@@ -329,6 +331,26 @@ class _MainShellState extends ConsumerState<MainShell> {
             IconButton(
               icon: Icon(Icons.edit, color: textPrimary, size: 22),
               onPressed: _triggerNewSession,
+            ),
+            // 搜索按钮
+            IconButton(
+              icon: Icon(Icons.search, color: textPrimary, size: 22),
+              onPressed: () {
+                final novel = ref.read(selectedNovelProvider);
+                if (novel != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GlobalSearchPage(
+                        novelId: novel.id,
+                        novelTitle: novel.title,
+                      ),
+                    ),
+                  );
+                } else {
+                  TopNotification.show(context, '请先选择一部作品再使用全局搜索');
+                }
+              },
             ),
             // 设置按钮
             IconButton(
@@ -654,6 +676,19 @@ class _MainShellState extends ConsumerState<MainShell> {
                     '${novel.chapterCount}章',
                     style: TextStyle(color: textSecondary, fontSize: 10),
                   ),
+                ),
+                const SizedBox(width: 4),
+                // 大纲按钮
+                GestureDetector(
+                  onTap: () {
+                    ref.read(selectedNovelProvider.notifier).state = novel;
+                    setState(() => _sidebarOpen = false);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OutlinePage()),
+                    );
+                  },
+                  child: Icon(Icons.account_tree, color: primaryColor, size: 14),
                 ),
               ],
             ),
