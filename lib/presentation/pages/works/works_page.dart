@@ -38,29 +38,31 @@ class _WorksPageState extends ConsumerState<WorksPage> {
   @override
   Widget build(BuildContext context) {
     final novelsAsync = ref.watch(novelsProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           '网文写作IDE',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: colorScheme.onSurface,
           ),
         ),
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_upload_outlined, color: Colors.white),
+            icon: Icon(Icons.file_upload_outlined, color: colorScheme.onSurface),
             tooltip: '导入作品',
             onPressed: () => _showImportDialog(context, ref),
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            icon: Icon(Icons.settings_outlined, color: colorScheme.onSurface),
             tooltip: '设置',
             onPressed: () {
               Navigator.push(
@@ -93,7 +95,7 @@ class _WorksPageState extends ConsumerState<WorksPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateNovelDialog(context, ref),
-        backgroundColor: const Color(0xFF10A37F),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('新建作品', style: TextStyle(color: Colors.white)),
       ),
@@ -104,18 +106,19 @@ class _WorksPageState extends ConsumerState<WorksPage> {
   Widget _buildStatsHeader(List<Novel> novels) {
     final totalWords = novels.fold<int>(0, (sum, n) => sum + n.totalWordCount);
     final totalChapters = novels.fold<int>(0, (sum, n) => sum + n.chapterCount);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF10A37F), Color(0xFF0D8C6C)],
+        gradient: LinearGradient(
+          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF10A37F).withOpacity(0.3),
+            color: colorScheme.primary.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -125,9 +128,9 @@ class _WorksPageState extends ConsumerState<WorksPage> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _StatItem(label: '作品', value: '${novels.length}'),
-          Container(width: 1, height: 28, color: Colors.white.withOpacity(0.3)),
+          Container(width: 1, height: 28, color: colorScheme.onSurface.withOpacity(0.3)),
           _StatItem(label: '总字数', value: _formatWordCount(totalWords)),
-          Container(width: 1, height: 28, color: Colors.white.withOpacity(0.3)),
+          Container(width: 1, height: 28, color: colorScheme.onSurface.withOpacity(0.3)),
           _StatItem(label: '总章节', value: '$totalChapters'),
         ],
       ),
@@ -143,6 +146,7 @@ class _WorksPageState extends ConsumerState<WorksPage> {
 
   /// 空状态 — 暗色主题风格
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -154,29 +158,29 @@ class _WorksPageState extends ConsumerState<WorksPage> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10A37F), Color(0xFF0D8C6C)],
+                gradient: LinearGradient(
+                  colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF10A37F).withOpacity(0.3),
+                    color: colorScheme.primary.withOpacity(0.3),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              child: const Icon(Icons.auto_stories, size: 40, color: Colors.white),
+              child: Icon(Icons.auto_stories, size: 40, color: colorScheme.onSurface),
             ),
             const SizedBox(height: 28),
-            const Text(
+            Text(
               '开始你的创作之旅',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 10),
@@ -199,7 +203,7 @@ class _WorksPageState extends ConsumerState<WorksPage> {
                 icon: const Icon(Icons.add_rounded, size: 22),
                 label: const Text('新建作品', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF10A37F),
+                  backgroundColor: colorScheme.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
@@ -207,8 +211,8 @@ class _WorksPageState extends ConsumerState<WorksPage> {
             const SizedBox(height: 14),
             TextButton.icon(
               onPressed: () => _showImportDialog(context, ref),
-              icon: const Icon(Icons.file_upload_outlined, size: 18, color: Color(0xFF888888)),
-              label: const Text('导入 TXT / MD / EPUB 文件', style: TextStyle(color: Color(0xFF888888))),
+              icon: Icon(Icons.file_upload_outlined, size: 18, color: colorScheme.onSurface.withOpacity(0.5)),
+              label: Text('导入 TXT / MD / EPUB 文件', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5))),
             ),
             const SizedBox(height: 48),
             // 三大卖点
@@ -218,21 +222,21 @@ class _WorksPageState extends ConsumerState<WorksPage> {
                   icon: Icons.shield_outlined,
                   title: '完全离线',
                   subtitle: '数据只属于你',
-                  color: const Color(0xFF10A37F),
+                  color: colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
                 _FeatureCard(
                   icon: Icons.smart_toy_outlined,
                   title: '35+ AI工具',
                   subtitle: '智能写作Agent',
-                  color: const Color(0xFF9B8AFF),
+                  color: colorScheme.secondary,
                 ),
                 const SizedBox(width: 12),
                 _FeatureCard(
                   icon: Icons.book_outlined,
                   title: '8种资料',
                   subtitle: '完整创作管理',
-                  color: const Color(0xFFFF9F43),
+                  color: colorScheme.tertiary,
                 ),
               ],
             ),
@@ -780,13 +784,14 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF2A2A2A)),
+          border: Border.all(color: colorScheme.background),
         ),
         child: Column(
           children: [
@@ -800,7 +805,7 @@ class _FeatureCard extends StatelessWidget {
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(height: 10),
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
             const SizedBox(height: 2),
             Text(subtitle, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
           ],
@@ -818,12 +823,13 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.8))),
       ],
     );
   }

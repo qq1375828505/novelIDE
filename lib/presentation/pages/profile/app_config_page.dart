@@ -132,7 +132,7 @@ class _AppConfigPageState extends State<AppConfigPage> {
                 ),
                 // Buttons
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.fromLTRB(12, 12, 12, 12 + MediaQuery.of(context).padding.bottom),
                   child: Row(
                     children: [
                       Expanded(

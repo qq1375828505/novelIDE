@@ -401,8 +401,11 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
     // 使用 _showSidebar 而不是 _showHistory，保持功能向后兼容
     final showSidebar = _showHistory || _showSidebar;
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           // 主聊天区域
@@ -414,12 +417,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                 child: Container(
                   padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
                   decoration: BoxDecoration(
-                    color: Colors.black,
-                    border: Border(bottom: BorderSide(color: Colors.grey[800]!)),
+                    color: theme.scaffoldBackgroundColor,
+                    border: Border(bottom: BorderSide(color: theme.dividerColor)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.menu, color: Colors.white),
+                      Icon(Icons.menu, color: colorScheme.onSurface),
                       const SizedBox(width: 12),
                       Expanded(
                         child: GestureDetector(
@@ -431,7 +434,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                                 backgroundColor: Colors.transparent,
                                 builder: (ctx) => Container(
                                   decoration: BoxDecoration(
-                                    color: Color(0xFF1F1F1F),
+                                    color: colorScheme.surface,
                                     borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                                   ),
                                   child: SafeArea(
@@ -443,16 +446,16 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                                           height: 4,
                                           margin: EdgeInsets.symmetric(horizontal: 150, vertical: 8),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey[600],
+                                            color: colorScheme.onSurface.withOpacity(0.3),
                                             borderRadius: BorderRadius.circular(2),
                                           ),
                                         ),
                                         const SizedBox(height: 8),
                                         ...configs.map((c) => ListTile(
-                                          title: Text(c.name, style: TextStyle(color: Colors.white)),
-                                          subtitle: Text(c.modelName, style: TextStyle(color: Colors.grey[500])),
+                                          title: Text(c.name, style: TextStyle(color: colorScheme.onSurface)),
+                                          subtitle: Text(c.modelName, style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5))),
                                           trailing: selectedConfig?.id == c.id
-                                              ? Icon(Icons.check, color: Color(0xFF10A37F))
+                                              ? Icon(Icons.check, color: colorScheme.primary)
                                               : null,
                                           onTap: () {
                                             ref.read(selectedAiConfigProvider.notifier).state = c;
@@ -471,16 +474,16 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                             children: [
                               Text(
                                 selectedConfig?.name ?? '选择模型',
-                                style: TextStyle(color: Colors.white, fontSize: 16),
+                                style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
                               ),
                               const SizedBox(width: 4),
-                              Icon(Icons.expand_more, color: Colors.grey[500]),
+                              Icon(Icons.expand_more, color: colorScheme.onSurface.withOpacity(0.5)),
                             ],
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.add, color: Colors.white),
+                        icon: Icon(Icons.add, color: colorScheme.onSurface),
                         onPressed: _newSession,
                       ),
                     ],
@@ -502,9 +505,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10A37F))),
+                                  SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary)),
                                   SizedBox(width: 12),
-                                  Text('思考中...', style: TextStyle(color: Colors.grey[500])),
+                                  Text('思考中...', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5))),
                                 ],
                               ),
                             );
@@ -524,7 +527,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                                 width: MediaQuery.of(context).size.width,
                                 constraints: BoxConstraints(maxWidth: 800),
                                 padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                color: isUser ? Colors.transparent : Color(0xFF2F2F2F),
+                                color: isUser ? Colors.transparent : colorScheme.surface,
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -533,12 +536,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                                       height: 30,
                                       margin: EdgeInsets.only(right: 16),
                                       decoration: BoxDecoration(
-                                        color: isUser ? Color(0xFF10A37F) : Color(0xFF404040),
+                                        color: isUser ? colorScheme.primary : colorScheme.surfaceVariant,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Icon(
                                         isUser ? Icons.person : Icons.smart_toy,
-                                        color: Colors.white,
+                                        color: isUser ? Colors.white : colorScheme.onSurface,
                                         size: 18,
                                       ),
                                     ),
@@ -546,7 +549,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                                       child: Text(
                                         msg['content']!,
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: isUser ? colorScheme.onSurface : colorScheme.onSurface,
                                           fontSize: 15,
                                           height: 1.6,
                                         ),
@@ -563,20 +566,20 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
               // 底部输入栏
               Container(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),
-                color: Colors.black,
+                color: theme.scaffoldBackgroundColor,
                 child: Container(
                   width: double.infinity,
                   constraints: BoxConstraints(maxWidth: 800),
                   decoration: BoxDecoration(
-                    color: Color(0xFF2F2F2F),
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.grey[700]!),
+                    border: Border.all(color: theme.dividerColor),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.add, color: Colors.grey[400]),
+                        icon: Icon(Icons.add, color: colorScheme.onSurface.withOpacity(0.6)),
                         onPressed: () {
                           setState(() => _showBottomSheet = true);
                           // 显示底部菜单
@@ -589,10 +592,10 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                           maxLines: null,
                           minLines: 1,
                           textInputAction: TextInputAction.send,
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: '消息 Novel IDE...',
-                            hintStyle: TextStyle(color: Colors.grey[500]),
+                            hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -604,7 +607,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                         onPressed: _isLoading ? null : _sendMessage,
                         padding: EdgeInsets.all(8),
                         constraints: BoxConstraints(),
-                        color: Color(0xFF10A37F),
+                        color: colorScheme.primary,
                       ),
                     ],
                   ),
@@ -619,7 +622,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                 children: [
                   Container(
                     width: 280,
-                    color: Color(0xFF171717),
+                    color: colorScheme.background,
                     child: Column(
                       children: [
                         SizedBox(height: 12),
@@ -635,14 +638,14 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                               width: double.infinity,
                               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[700]!),
+                                border: Border.all(color: theme.dividerColor),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.add, color: Colors.white),
+                                  Icon(Icons.add, color: colorScheme.onSurface),
                                   const SizedBox(width: 8),
-                                  Text('新建会话', style: TextStyle(color: Colors.white)),
+                                  Text('新建会话', style: TextStyle(color: colorScheme.onSurface)),
                                 ],
                               ),
                             ),
@@ -657,7 +660,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                               if (index == 0) {
                                 return Padding(
                                   padding: EdgeInsets.only(top: 12, bottom: 8, left: 8),
-                                  child: Text('历史会话', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                  child: Text('历史会话', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
                                 );
                               }
                               if (index <= _sessions.length) {
@@ -676,14 +679,14 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                                     width: double.infinity,
                                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: _currentSession?.id == session.id ? Color(0xFF2F2F2F) : Colors.transparent,
+                                      color: _currentSession?.id == session.id ? colorScheme.surface : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       session.title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: Colors.white, fontSize: 14),
+                                      style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
                                     ),
                                   ),
                                 );
@@ -691,7 +694,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                               if (index == _sessions.length + 1) {
                                 return Padding(
                                   padding: EdgeInsets.only(top: 16, bottom: 8, left: 8),
-                                  child: Text('我的作品', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                  child: Text('我的作品', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
                                 );
                               }
                               final novelIndex = index - _sessions.length - 2;
@@ -706,19 +709,19 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                                     width: double.infinity,
                                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: selectedNovel?.id == novel.id ? Color(0xFF2F2F2F) : Colors.transparent,
+                                      color: selectedNovel?.id == novel.id ? colorScheme.surface : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.book, color: Colors.grey[400], size: 16),
+                                        Icon(Icons.book, color: colorScheme.onSurface.withOpacity(0.6), size: 16),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             novel.title,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(color: Colors.white, fontSize: 14),
+                                            style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
                                           ),
                                         ),
                                       ],
@@ -730,11 +733,11 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                             },
                           ),
                         ),
-                        Divider(color: Colors.grey[800]),
+                        Divider(color: theme.dividerColor),
                         // 资料库入口
                         ListTile(
-                          leading: Icon(Icons.library_books, color: Colors.grey[400]),
-                          title: Text('资料库', style: TextStyle(color: Colors.white)),
+                          leading: Icon(Icons.library_books, color: colorScheme.onSurface.withOpacity(0.6)),
+                          title: Text('资料库', style: TextStyle(color: colorScheme.onSurface)),
                           onTap: () {
                             setState(() => _showSidebar = false);
                             // 切换到资料库 tab
@@ -758,6 +761,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Widget _buildEmptyState(dynamic currentPreset) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Center(
       child: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -766,12 +771,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.edit, size: 48, color: Colors.grey[700]),
+              Icon(Icons.edit, size: 48, color: colorScheme.onSurface.withOpacity(0.5)),
               const SizedBox(height: 24),
-              Text('Novel IDE', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Novel IDE', style: TextStyle(color: colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Text(currentPreset != null ? '当前风格: ${currentPreset.name}' : '专业网文写作助手',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                  style: TextStyle(fontSize: 13, color: colorScheme.onSurface.withOpacity(0.5))),
               const SizedBox(height: 32),
               // 快捷操作卡片
               Wrap(
@@ -810,14 +815,16 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Widget _buildHistoryView() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     if (_sessions.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: Colors.grey[200]),
+            Icon(Icons.history, size: 64, color: colorScheme.onSurface.withOpacity(0.3)),
             const SizedBox(height: 16),
-            Text('暂无会话历史', style: TextStyle(color: Colors.grey[400])),
+            Text('暂无会话历史', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
           ],
         ),
       );
@@ -829,9 +836,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         final msgCount = session.messages.length;
         return ListTile(
           leading: CircleAvatar(
-            backgroundColor: _currentSession?.id == session.id ? AppColors.primary : Colors.grey[200],
+            backgroundColor: _currentSession?.id == session.id ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.15),
             child: Icon(Icons.chat, size: 18,
-                color: _currentSession?.id == session.id ? Colors.white : Colors.grey),
+                color: _currentSession?.id == session.id ? Colors.white : colorScheme.onSurface.withOpacity(0.6)),
           ),
           title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text('$msgCount 条消息 · ${session.createdAt.month}/${session.createdAt.day}'),
@@ -861,6 +868,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Widget _buildChatView(List<Map<String, String>> messages, dynamic currentPreset) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Column(
       children: [
         // Messages
@@ -870,12 +879,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[200]),
+                      Icon(Icons.chat_bubble_outline, size: 64, color: colorScheme.onSurface.withOpacity(0.3)),
                       const SizedBox(height: 16),
-                      Text('开始和AI对话吧', style: TextStyle(fontSize: 16, color: Colors.grey[400])),
+                      Text('开始和AI对话吧', style: TextStyle(fontSize: 16, color: colorScheme.onSurface.withOpacity(0.6))),
                       const SizedBox(height: 8),
                       Text(currentPreset != null ? '当前风格: ${currentPreset.name}' : '默认写作助手',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[350])),
+                          style: TextStyle(fontSize: 13, color: colorScheme.onSurface.withOpacity(0.5))),
                       const SizedBox(height: 24),
                       // Quick actions
                       Wrap(
@@ -891,7 +900,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                       ),
                       const SizedBox(height: 16),
                       // Workflow quick actions
-                      Text('自动化工作流', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                      Text('自动化工作流', style: TextStyle(fontSize: 13, color: colorScheme.onSurface.withOpacity(0.5))),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -911,12 +920,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   itemCount: messages.length + (_isLoading ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == messages.length) {
-                      return const Padding(
+                      return Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
                         child: Row(children: [
-                          SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                          SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary)),
                           SizedBox(width: 12),
-                          Text('思考中...', style: TextStyle(color: Colors.grey)),
+                          Text('思考中...', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5))),
                         ]),
                       );
                     }
@@ -942,13 +951,13 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                               constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isUser ? AppColors.primary : Colors.grey[100],
+                                color: isUser ? colorScheme.primary : colorScheme.surface,
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: SelectableText(
                                 msg['content']!,
                                 style: TextStyle(
-                                  color: isUser ? Colors.white : Colors.black87,
+                                  color: isUser ? Colors.white : colorScheme.onSurface,
                                   fontSize: 14,
                                   height: 1.5,
                                 ),
@@ -965,7 +974,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
         Container(
           padding: EdgeInsets.fromLTRB(12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
           ),
           child: Row(
@@ -973,7 +982,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
               // + 按钮
               IconButton(
                 icon: const Icon(Icons.add_circle_outline, size: 28),
-                color: AppColors.primary,
+                color: colorScheme.primary,
                 onPressed: () => _showAttachMenu(context),
               ),
               // 通话按钮（实时语音通话）- 仅在配置了语音模型时可用
@@ -984,7 +993,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   return IconButton(
                     icon: Icon(
                       Icons.phone_in_talk,
-                      color: hasVoiceModel ? Colors.grey[600] : Colors.grey[300],
+                      color: hasVoiceModel ? colorScheme.onSurface.withOpacity(0.6) : colorScheme.onSurface.withOpacity(0.3),
                       size: 24,
                     ),
                     onPressed: hasVoiceModel
@@ -1012,7 +1021,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
               // ⚡ Skill按钮
               IconButton(
                 icon: const Icon(Icons.auto_awesome, size: 24),
-                color: AppColors.tomatoOrange,
+                color: colorScheme.secondary,
                 tooltip: '调用Skill',
                 onPressed: _showAgentSelector,
               ),
@@ -1026,7 +1035,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                     hintText: '输入消息...',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: colorScheme.surface,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
                   onSubmitted: (_) => _sendMessage(),
@@ -1034,7 +1043,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
               ),
               const SizedBox(width: 8),
               CircleAvatar(
-                backgroundColor: _isLoading ? Colors.grey : AppColors.primary,
+                backgroundColor: _isLoading ? colorScheme.onSurface.withOpacity(0.3) : colorScheme.primary,
                 child: IconButton(
                   icon: const Icon(Icons.send, color: Colors.white, size: 18),
                   onPressed: _isLoading ? null : _sendMessage,
@@ -1049,12 +1058,14 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
   /// + 按钮底部菜单：文件 + 技能
   void _showAttachMenu(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1067,7 +1078,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: colorScheme.onSurface.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1078,13 +1089,13 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.description_outlined, color: AppColors.primary),
+                  child: Icon(Icons.description_outlined, color: colorScheme.primary),
                 ),
                 title: const Text('文件', style: TextStyle(fontSize: 16)),
-                subtitle: const Text('选择 TXT、DOCX 等文件', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                subtitle: Text('选择 TXT、DOCX 等文件', style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickFile();
@@ -1096,13 +1107,13 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.teal.withOpacity(0.1),
+                    color: colorScheme.secondary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.library_books, color: Colors.teal),
+                  child: Icon(Icons.library_books, color: colorScheme.secondary),
                 ),
                 title: const Text('选择资料', style: TextStyle(fontSize: 16)),
-                subtitle: const Text('选择角色、设定等资料作为上下文', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                subtitle: Text('选择角色、设定等资料作为上下文', style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showMaterialPicker();
@@ -1114,13 +1125,13 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.secondary.withOpacity(0.1),
+                    color: colorScheme.secondary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.auto_awesome, color: AppColors.secondary),
+                  child: Icon(Icons.auto_awesome, color: colorScheme.secondary),
                 ),
                 title: const Text('Skill', style: TextStyle(fontSize: 16)),
-                subtitle: const Text('AI 写作技巧和预设', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                subtitle: Text('AI 写作技巧和预设', style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showAgentSelector();
@@ -1138,7 +1149,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                   child: const Icon(Icons.psychology_outlined, color: Colors.orange),
                 ),
                 title: const Text('去AI味', style: TextStyle(fontSize: 16)),
-                subtitle: const Text('消除AI写作痕迹，让文本更自然', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                subtitle: Text('消除AI写作痕迹，让文本更自然', style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
                 onTap: () {
                   Navigator.pop(ctx);
                   _humanizeText();
@@ -1155,13 +1166,15 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   /// Agent选择器 — 底部弹窗
   void _showAgentSelector() {
     final agents = ref.read(tomatoAgentsProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.6),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -1170,18 +1183,18 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
             // 拖拽指示条
             Container(
               width: 36, height: 4,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: colorScheme.onSurface.withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 12),
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Icon(Icons.auto_awesome, size: 20, color: AppColors.tomatoOrange),
+                  Icon(Icons.auto_awesome, size: 20, color: colorScheme.secondary),
                   SizedBox(width: 8),
                   Text('调用Skill', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   SizedBox(width: 8),
-                  Text('选择Agent执行专项任务', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text('选择Agent执行专项任务', style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
                 ],
               ),
             ),
@@ -1196,8 +1209,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                     leading: Text(agent.icon, style: const TextStyle(fontSize: 28)),
                     title: Text(agent.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(agent.description, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-                    trailing: const Icon(Icons.play_circle_outline, color: AppColors.tomatoOrange),
+                        style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
+                    trailing: Icon(Icons.play_circle_outline, color: colorScheme.secondary),
                     onTap: () {
                       Navigator.pop(ctx);
                       _invokeAgent(agent);
@@ -1399,12 +1412,14 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
 
   /// 显示消息长按菜单（复制、撤回）
   void _showMessageMenu(BuildContext context, int index, String content) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -1416,12 +1431,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: colorScheme.onSurface.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.copy, color: Colors.black87),
+                leading: Icon(Icons.copy, color: colorScheme.onSurface),
                 title: const Text('复制'),
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: content));
@@ -1562,6 +1577,9 @@ $inputText''';
     final tabNames = ['角色', '设定', '地点', '势力', '道具', '伏笔', '参考', ...customFolders.map((f) => f.name)];
     final selectedIds = <String>{};
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1569,8 +1587,8 @@ $inputText''';
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setPickerState) => Container(
           height: MediaQuery.of(ctx).size.height * 0.7,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -1578,17 +1596,17 @@ $inputText''';
               Container(
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(top: 12),
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: colorScheme.onSurface.withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Row(
                   children: [
-                    const Icon(Icons.library_books, size: 20, color: Colors.teal),
+                    Icon(Icons.library_books, size: 20, color: colorScheme.secondary),
                     const SizedBox(width: 8),
                     const Text('选择资料', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const Spacer(),
-                    Text('${selectedIds.length} 项已选', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                    Text('${selectedIds.length} 项已选', style: TextStyle(fontSize: 13, color: colorScheme.onSurface.withOpacity(0.5))),
                   ],
                 ),
               ),
@@ -1786,18 +1804,20 @@ $inputText''';
   }
 
   Widget _buildSectionHeader(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
-      child: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+      child: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.6))),
     );
   }
 
   Widget _buildPreview(String text) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Text(
       text.isEmpty ? '无描述' : text.substring(0, text.length.clamp(0, 30)),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+      style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5)),
     );
   }
 
@@ -1832,10 +1852,11 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ActionChip(
       label: Text(label, style: const TextStyle(fontSize: 13)),
       onPressed: onTap,
-      backgroundColor: AppColors.primary.withOpacity(0.1),
+      backgroundColor: colorScheme.primary.withOpacity(0.1),
     );
   }
 }
@@ -1849,23 +1870,25 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 156,
         padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[700]!),
+          border: Border.all(color: theme.dividerColor),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(color: Colors.white, fontSize: 14)),
+            Text(title, style: TextStyle(color: colorScheme.onSurface, fontSize: 14)),
             const SizedBox(height: 4),
             Text(
               defaultMessage,
-              style: TextStyle(color: Colors.grey[500], fontSize: 11),
+              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5), fontSize: 11),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

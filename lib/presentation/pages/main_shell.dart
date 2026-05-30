@@ -11,6 +11,8 @@ class MainShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     final pages = [
       const WorksPage(),
@@ -28,12 +30,8 @@ class MainShell extends ConsumerWidget {
         onDestinationSelected: (index) {
           ref.read(bottomNavIndexProvider.notifier).state = index;
         },
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF0D0D0D)
-            : null,
-        indicatorColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF10A37F).withOpacity(0.15)
-            : null,
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primary.withOpacity(0.15),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.auto_stories_outlined),

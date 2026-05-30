@@ -198,8 +198,7 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> with WidgetsBindingOb
 
   void _loadSettings() async {
     try {
-      final savedDark = ConfigService.isDarkMode;
-      ref.read(darkModeProvider.notifier).state = savedDark;
+      // 深色模式已由皮肤系统控制，不再需要单独的 darkModeProvider
       ref.read(fontSizeProvider.notifier).state = ConfigService.fontSize;
       ref.read(fontFamilyProvider.notifier).state = ConfigService.fontFamily;
       ref.read(lineHeightProvider.notifier).state = ConfigService.lineHeight;
@@ -220,7 +219,6 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> with WidgetsBindingOb
   @override
   Widget build(BuildContext context) {
     final skinTheme = ref.watch(skinThemeProvider);
-    final isDark = ref.watch(darkModeProvider);
 
     return MaterialApp(
       title: AppStrings.appName,
@@ -237,8 +235,7 @@ class _NovelIdeAppState extends ConsumerState<NovelIdeApp> with WidgetsBindingOb
       ],
       locale: const Locale('zh', 'CN'), // 默认中文
       theme: skinTheme.toThemeData(),
-      darkTheme: AppTheme.dark,
-      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+      // 不再使用 darkTheme/themeMode 切换，统一由皮肤系统控制
       initialRoute: AppRouter.home,
       onGenerateRoute: AppRouter.onGenerateRoute,
     );

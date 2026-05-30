@@ -91,6 +91,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
 
     // 构建文件树
     final treeNodes = _buildFileTree(
+      context: context,
       characters: characters,
       settings: settings,
       locations: locations,
@@ -102,25 +103,28 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
       customFolders: customFolders,
     );
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         title: Text(
           '${selectedNovel.title} · 资料库',
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: theme.appBarTheme.foregroundColor ?? colorScheme.onSurface),
         ),
         actions: [
           IconButton(
             icon: _isGeneratingOutline
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10A37F)))
-                : const Icon(Icons.auto_awesome, color: Colors.white),
+                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary))
+                : Icon(Icons.auto_awesome, color: theme.appBarTheme.foregroundColor ?? colorScheme.onSurface),
             tooltip: 'AI生成大纲',
             onPressed: _isGeneratingOutline ? null : () => _generateOutline(selectedNovel.id),
           ),
           IconButton(
-            icon: const Icon(Icons.people_outline, color: Colors.white),
+            icon: Icon(Icons.people_outline, color: theme.appBarTheme.foregroundColor ?? colorScheme.onSurface),
             tooltip: '角色关系图',
             onPressed: () {
               Navigator.push(
@@ -132,7 +136,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.file_download_outlined, color: Colors.white),
+            icon: Icon(Icons.file_download_outlined, color: theme.appBarTheme.foregroundColor ?? colorScheme.onSurface),
             tooltip: '打包',
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(
@@ -164,15 +168,16 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('资料库')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inventory_2, size: 64, color: Colors.grey[300]),
+            Icon(Icons.inventory_2, size: 64, color: colorScheme.onSurface.withOpacity(0.3)),
             const SizedBox(height: 16),
-            Text('先选择一部作品', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
+            Text('先选择一部作品', style: TextStyle(fontSize: 16, color: colorScheme.onSurface.withOpacity(0.5))),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.read(bottomNavIndexProvider.notifier).state = 0,
@@ -185,6 +190,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
   }
 
   List<FileTreeNode> _buildFileTree({
+    required BuildContext context,
     required List<Character> characters,
     required List<SettingCard> settings,
     required List<Location> locations,
@@ -195,6 +201,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
     required String memoryContent,
     required List<CustomMaterialFolder> customFolders,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return [
       FileTreeNode(
         id: 'folder_characters',
@@ -303,14 +310,14 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
         isFolder: true,
         isExpanded: _expandedNodes.contains(folder.name),
         icon: Icons.folder,
-        iconColor: Colors.teal,
+        iconColor: colorScheme.primary,
         children: folder.items.map((item) => FileTreeNode(
           id: 'custom_item_${item.id}',
           parentType: 'custom_${folder.id}',
           name: '${item.title}.md',
           content: item.content,
           icon: Icons.description,
-          iconColor: Colors.teal[300],
+          iconColor: colorScheme.primary.withOpacity(0.7),
           fileType: 'md',
         )).toList(),
       )),
@@ -594,7 +601,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
       context: context,
       builder: (ctx) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
-          leading: Icon(Icons.note_add, color: Colors.teal),
+          leading: Icon(Icons.note_add, color: Theme.of(context).colorScheme.primary),
           title: const Text('添加条目'),
           onTap: () { Navigator.pop(ctx); _showAddItemToCustomFolderDialog(folderId); },
         ),
@@ -1019,7 +1026,7 @@ class _MaterialsTreePageState extends ConsumerState<MaterialsTreePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.create_new_folder, color: Colors.teal),
+              leading: Icon(Icons.create_new_folder, color: Theme.of(context).colorScheme.primary),
               title: const Text('新建文件夹'),
               subtitle: const Text('创建自定义分类'),
               onTap: () { Navigator.pop(ctx); _showNewFolderDialog(); },

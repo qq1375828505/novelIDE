@@ -29,7 +29,7 @@ class ProfilePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = ref.watch(darkModeProvider);
+    final skinTheme = ref.watch(skinThemeProvider);
     final wordGoal = ref.watch(wordGoalProvider);
     final fontSize = ref.watch(fontSizeProvider);
 
@@ -169,10 +169,11 @@ class ProfilePage extends ConsumerWidget {
             leading: const Icon(Icons.dark_mode),
             title: const Text('深色模式'),
             trailing: Switch(
-              value: isDark,
+              value: skinTheme.brightness == Brightness.dark,
               onChanged: (value) {
-                ref.read(darkModeProvider.notifier).state = value;
-                ConfigService.isDarkMode = value;
+                ref.read(skinThemeProvider.notifier).setSkin(
+                  value ? SkinType.black : SkinType.white,
+                );
               },
             ),
           ),

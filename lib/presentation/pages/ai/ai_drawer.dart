@@ -224,7 +224,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -233,7 +233,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
             child: Row(
               children: [
-                const Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
+                Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 const Text('AI写作助手', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(width: 12),
@@ -245,19 +245,19 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.smart_toy, size: 14, color: AppColors.primary),
+                          Icon(Icons.smart_toy, size: 14, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 4),
                           Text(
                             selectedConfig?.name ?? '',
-                            style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500),
+                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
                           ),
-                          const Icon(Icons.arrow_drop_down, size: 14, color: AppColors.primary),
+                          Icon(Icons.arrow_drop_down, size: 14, color: Theme.of(context).colorScheme.primary),
                         ],
                       ),
                     ),
@@ -277,12 +277,12 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                         child: Row(
                           children: [
                             Icon(c.id == selectedConfig?.id ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                                size: 16, color: c.id == selectedConfig?.id ? AppColors.primary : Colors.grey),
+                                size: 16, color: c.id == selectedConfig?.id ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Text(c.name, style: const TextStyle(fontSize: 14)),
-                                Text('${c.modelName}', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                                Text('${c.modelName}', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                               ]),
                             ),
                           ],
@@ -293,9 +293,9 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                         value: 'add_new',
                         child: Row(
                           children: [
-                            Icon(Icons.add_circle_outline, size: 16, color: AppColors.primary),
+                            Icon(Icons.add_circle_outline, size: 16, color: Theme.of(context).colorScheme.primary),
                             SizedBox(width: 8),
-                            Text('添加新模型', style: TextStyle(color: AppColors.primary)),
+                            Text('添加新模型', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                           ],
                         ),
                       ),
@@ -342,9 +342,9 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.auto_awesome, size: 48, color: Colors.grey[300]),
+                        Icon(Icons.auto_awesome, size: 48, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                         const SizedBox(height: 12),
-                        Text('选择上方快捷动作或输入指令', style: TextStyle(color: Colors.grey[400])),
+                        Text('选择上方快捷动作或输入指令', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                       ],
                     ),
                   )
@@ -364,8 +364,8 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: isUser
-                                ? AppColors.primary.withOpacity(0.1)
-                                : Colors.grey[100],
+                                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                                : Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -375,7 +375,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                                 msg['content'],
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: isUser ? AppColors.primary : Colors.black87,
+                                  color: isUser ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               if (!isUser)
@@ -413,7 +413,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              border: Border(top: BorderSide(color: Colors.grey[200]!)),
+              border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
             ),
             child: Row(
               children: [
@@ -423,7 +423,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                     decoration: InputDecoration(
                       hintText: '输入AI指令...',
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Theme.of(context).colorScheme.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
@@ -435,7 +435,7 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   child: IconButton(
                     icon: const Icon(Icons.send, color: Colors.white, size: 18),
                     onPressed: () => _sendMessage(),
@@ -459,10 +459,10 @@ class _ActionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ActionChip(
-      avatar: Icon(icon, size: 16, color: AppColors.primary),
+      avatar: Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
       label: Text(label, style: const TextStyle(fontSize: 12)),
-      backgroundColor: AppColors.primary.withOpacity(0.05),
-      side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
+      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+      side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
       onPressed: onTap,
     );
   }

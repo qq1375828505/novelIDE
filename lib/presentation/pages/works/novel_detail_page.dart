@@ -670,7 +670,7 @@ class _OutlineTab extends ConsumerWidget {
           },
         ),
         Positioned(
-          right: 16, bottom: 16,
+          right: 16, bottom: 16 + MediaQuery.of(context).padding.bottom,
           child: FloatingActionButton.small(
             onPressed: () => _showCreateDialog(context, ref),
             child: const Icon(Icons.add),
@@ -808,7 +808,7 @@ class _CharactersTab extends ConsumerWidget {
           },
         ),
         Positioned(
-          right: 16, bottom: 16,
+          right: 16, bottom: 16 + MediaQuery.of(context).padding.bottom,
           child: FloatingActionButton.small(
             onPressed: () => _showCreateDialog(context, ref),
             child: const Icon(Icons.add),
@@ -950,7 +950,7 @@ class _SettingsTab extends ConsumerWidget {
           },
         ),
         Positioned(
-          right: 16, bottom: 16,
+          right: 16, bottom: 16 + MediaQuery.of(context).padding.bottom,
           child: FloatingActionButton.small(
             onPressed: () => _showCreateDialog(context, ref),
             child: const Icon(Icons.add),
