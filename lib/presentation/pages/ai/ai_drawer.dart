@@ -289,12 +289,12 @@ class _AiDrawerState extends ConsumerState<AiDrawer> {
                         ),
                       )),
                       const PopupMenuDivider(),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'add_new',
                         child: Row(
                           children: [
                             Icon(Icons.add_circle_outline, size: 16, color: Theme.of(context).colorScheme.primary),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text('添加新模型', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                           ],
                         ),
