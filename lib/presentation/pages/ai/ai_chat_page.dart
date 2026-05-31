@@ -947,7 +947,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
       builder: (context, snapshot) {
         final allSkills = snapshot.data ?? [];
         final enabledSkills = allSkills.where((s) => s.isEnabled).toList();
-        final displaySkills = enabledSkills.take(5).toList();
+        final displaySkills = enabledSkills;  // 显示全部技能
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1015,7 +1015,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   Widget _buildTomatoSection(BuildContext ctx) {
     // 从 Provider 读取真实番茄预设
     final presets = ref.watch(tomatoPresetsProvider);
-    final displayPresets = presets.take(5).toList();
+    final displayPresets = presets;  // 显示全部预设
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
