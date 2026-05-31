@@ -1433,6 +1433,8 @@ class _MainShellState extends ConsumerState<MainShell> {
                           context,
                           MaterialPageRoute(builder: (_) => const StatsPage()),
                         );
+                      },
+                    ),
                     _buildAiToolMenuItem(
                       icon: Icons.analytics,
                       title: '爽点报告',
@@ -1519,8 +1521,6 @@ class _MainShellState extends ConsumerState<MainShell> {
                         } else {
                           TopNotification.show(context, '请先选择一部作品');
                         }
-                      },
-                    ),
                       },
                     ),
                     _buildAiToolMenuItem(
