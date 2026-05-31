@@ -339,19 +339,15 @@ class _MainShellState extends ConsumerState<MainShell> {
               icon: Icon(Icons.search, color: textPrimary, size: 22),
               onPressed: () {
                 final novel = ref.read(selectedNovelProvider);
-                if (novel != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => GlobalSearchPage(
-                        novelId: novel.id,
-                        novelTitle: novel.title,
-                      ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => GlobalSearchPage(
+                      novelId: novel?.id ?? '',
+                      novelTitle: novel?.title ?? '全部作品',
                     ),
-                  );
-                } else {
-                  TopNotification.show(context, '请先选择一部作品再使用全局搜索');
-                }
+                  ),
+                );
               },
             ),
             // AI工具按钮 - 跳转到AI聊天页面
@@ -493,16 +489,12 @@ class _MainShellState extends ConsumerState<MainShell> {
                       setState(() => _sidebarOpen = false);
                       // 跳转到导出页面
                       final novel = ref.read(selectedNovelProvider);
-                      if (novel != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ExportPage(novelId: novel.id, novelTitle: novel.title),
-                          ),
-                        );
-                      } else {
-                        TopNotification.show(context, '请先选择一部作品');
-                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ExportPage(novelId: novel?.id ?? '', novelTitle: novel?.title ?? '全部作品'),
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.upload, size: 16),
                     label: const Text('导出'),
