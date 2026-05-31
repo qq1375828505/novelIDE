@@ -1533,6 +1533,26 @@ class _MainShellState extends ConsumerState<MainShell> {
                     ),
                     _buildAiToolMenuItem(
                       icon: Icons.auto_fix_high,
+                      title: '去AI味',
+                      subtitle: '将AI文本转为自然人类写作风格',
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        final agent = ref.read(tomatoAgentsProvider).where((a) => a.id == 'humanize_zh').firstOrNull;
+                        final config = ref.read(effectiveAiConfigProvider);
+                        if (agent != null && config != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AgentRunPage(agent: agent, config: config),
+                            ),
+                          );
+                        } else if (config == null) {
+                          TopNotification.show(context, '请先配置AI模型');
+                        }
+                      },
+                    ),
+                    _buildAiToolMenuItem(
+                      icon: Icons.auto_fix_high,
                       title: '润色引擎',
                       subtitle: '章节精修、8个维度',
                       onTap: () {
