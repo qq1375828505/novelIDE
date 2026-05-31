@@ -17,14 +17,37 @@ import 'package:url_launcher/url_launcher.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  await ConfigService.init();
+  
+  try {
+    await Hive.initFlutter();
+  } catch (e) {
+    debugPrint('Hive init error: $e');
+  }
+  
+  try {
+    await ConfigService.init();
+  } catch (e) {
+    debugPrint('ConfigService init error: $e');
+  }
   
   // 初始化默认AI配置（开箱即用）
-  await DefaultConfigService.initDefaultConfig();
+  try {
+    await DefaultConfigService.initDefaultConfig();
+  } catch (e) {
+    debugPrint('DefaultConfig init error: $e');
+  }
   
-  ConnectivityService.startMonitoring();
-  await NotificationService.init();
+  try {
+    ConnectivityService.startMonitoring();
+  } catch (e) {
+    debugPrint('ConnectivityService error: $e');
+  }
+  
+  try {
+    await NotificationService.init();
+  } catch (e) {
+    debugPrint('NotificationService init error: $e');
+  }
 
   // 延迟权限请求到首页加载后，避免阻塞启动
   // 权限请求在 _NovelIdeAppState.initState 中进行
