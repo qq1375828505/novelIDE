@@ -1160,7 +1160,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     Color textTertiary,
     Color cardBg2,
     Color primaryColor,
-    Novel? selectedNovel,
+    Novel selectedNovel,
   ) {
     return Container(
       width: double.infinity,
@@ -1203,8 +1203,8 @@ class _MainShellState extends ConsumerState<MainShell> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => RelationshipGraphPage(
-                    novelId: selectedNovel?.id ?? "",
-                    novelTitle: selectedNovel?.title ?? "",
+                    novelId: selectedNovel.id,
+                    novelTitle: selectedNovel.title,
                   ),
                 ),
               );
@@ -1255,28 +1255,35 @@ class _MainShellState extends ConsumerState<MainShell> {
         } else if (materialType == 'shuangdian') {
           // 爽点报告 - 需要选择作品
           final novel = ref.read(selectedNovelProvider);
-          if (novel != null) {
+          final chapter = ref.read(selectedChapterProvider);
+          if (novel != null && chapter != null) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const ShuangdianReportPage(),
+                builder: (_) => ShuangdianReportPage(
+                  chapterContent: chapter.content,
+                  aiResponse: '',
+                ),
               ),
             );
           } else {
-            TopNotification.show(context, '请先选择一部作品');
+            TopNotification.show(context, '请先选择作品和章节');
           }
         } else if (materialType == 'water') {
           // 水文检测 - 需要选择作品
           final novel = ref.read(selectedNovelProvider);
-          if (novel != null) {
+          final chapter = ref.read(selectedChapterProvider);
+          if (novel != null && chapter != null) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const WaterReportPage(),
+                builder: (_) => WaterReportPage(
+                  chapterContent: chapter.content,
+                ),
               ),
             );
           } else {
-            TopNotification.show(context, '请先选择一部作品');
+            TopNotification.show(context, '请先选择作品和章节');
           }
         } else if (materialType == 'title') {
           // 标题生成 - 需要选择作品
@@ -1285,7 +1292,9 @@ class _MainShellState extends ConsumerState<MainShell> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const TitleGeneratorResultPage(),
+                builder: (_) => TitleGeneratorResultPage(
+                  aiResponse: '',
+                ),
               ),
             );
           } else {
@@ -1298,7 +1307,10 @@ class _MainShellState extends ConsumerState<MainShell> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const FullTextReviewPage(),
+                builder: (_) => FullTextReviewPage(
+                  novelId: novel.id,
+                  novelTitle: novel.title,
+                ),
               ),
             );
           } else {
@@ -1421,8 +1433,6 @@ class _MainShellState extends ConsumerState<MainShell> {
                           context,
                           MaterialPageRoute(builder: (_) => const StatsPage()),
                         );
-                      },
-                    ),
                     _buildAiToolMenuItem(
                       icon: Icons.analytics,
                       title: '爽点报告',
@@ -1430,15 +1440,19 @@ class _MainShellState extends ConsumerState<MainShell> {
                       onTap: () {
                         Navigator.pop(ctx);
                         final novel = ref.read(selectedNovelProvider);
-                        if (novel != null) {
+                        final chapter = ref.read(selectedChapterProvider);
+                        if (novel != null && chapter != null) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const ShuangdianReportPage(),
+                              builder: (_) => ShuangdianReportPage(
+                                chapterContent: chapter.content,
+                                aiResponse: '',
+                              ),
                             ),
                           );
                         } else {
-                          TopNotification.show(context, '请先选择一部作品');
+                          TopNotification.show(context, '请先选择作品和章节');
                         }
                       },
                     ),
@@ -1449,15 +1463,18 @@ class _MainShellState extends ConsumerState<MainShell> {
                       onTap: () {
                         Navigator.pop(ctx);
                         final novel = ref.read(selectedNovelProvider);
-                        if (novel != null) {
+                        final chapter = ref.read(selectedChapterProvider);
+                        if (novel != null && chapter != null) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const WaterReportPage(),
+                              builder: (_) => WaterReportPage(
+                                chapterContent: chapter.content,
+                              ),
                             ),
                           );
                         } else {
-                          TopNotification.show(context, '请先选择一部作品');
+                          TopNotification.show(context, '请先选择作品和章节');
                         }
                       },
                     ),
@@ -1472,7 +1489,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const TitleGeneratorResultPage(),
+                              builder: (_) => TitleGeneratorResultPage(
+                                aiResponse: '',
+                              ),
                             ),
                           );
                         } else {
@@ -1491,12 +1510,17 @@ class _MainShellState extends ConsumerState<MainShell> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const FullTextReviewPage(),
+                              builder: (_) => FullTextReviewPage(
+                                novelId: novel.id,
+                                novelTitle: novel.title,
+                              ),
                             ),
                           );
                         } else {
                           TopNotification.show(context, '请先选择一部作品');
                         }
+                      },
+                    ),
                       },
                     ),
                     _buildAiToolMenuItem(
