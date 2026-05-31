@@ -6,14 +6,27 @@ class SecureStorageDataSource {
   );
 
   Future<void> writeApiKey(String configId, String apiKey) async {
-    await _storage.write(key: 'api_key_$configId', value: apiKey);
+    try {
+      await _storage.write(key: 'api_key_$configId', value: apiKey);
+    } catch (e) {
+      debugPrint('SecureStorage write error: $e');
+    }
   }
 
   Future<String?> readApiKey(String configId) async {
-    return await _storage.read(key: 'api_key_$configId');
+    try {
+      return await _storage.read(key: 'api_key_$configId');
+    } catch (e) {
+      debugPrint('SecureStorage read error: $e');
+      return null;
+    }
   }
 
   Future<void> deleteApiKey(String configId) async {
-    await _storage.delete(key: 'api_key_$configId');
+    try {
+      await _storage.delete(key: 'api_key_$configId');
+    } catch (e) {
+      debugPrint('SecureStorage delete error: $e');
+    }
   }
 }
