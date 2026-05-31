@@ -23,7 +23,7 @@ class SkinThemeNotifier extends StateNotifier<SkinTheme> {
     try {
       // 确保 box 已打开
       _box = await Hive.openBox(_boxName);
-      final savedIndex = _box!.get(_skinKey, defaultValue: 1);
+      final savedIndex = _box!.get(_skinKey, defaultValue: 0);
       if (savedIndex >= 0 && savedIndex < SkinType.values.length) {
         state = AppSkins.getByType(SkinType.values[savedIndex]);
       }
