@@ -908,7 +908,9 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
   }
 
   Widget _buildSkillSection(BuildContext ctx) {
-    final skills = ref.watch(writingSkillsProvider);
+    final skillAsync = ref.watch(skillsAsyncProvider);
+
+    final skills = skillAsync.valueOrNull ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -934,7 +936,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> with WidgetsBindingObse
                       return GestureDetector(
                         onTap: () {
                           Navigator.pop(ctx);
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SkillManagePage()));
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
                         },
                         child: Container(
                           width: 80,
