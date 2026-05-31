@@ -253,7 +253,7 @@ class _CustomAgentsViewState extends ConsumerState<_CustomAgentsView> {
       return;
     }
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => _AgentRunPage(agent: agent, config: config),
+      builder: (_) => AgentRunPage(agent: agent, config: config),
     ));
   }
 }
@@ -336,22 +336,22 @@ void _runAgent(BuildContext context, WidgetRef ref, TomatoAgent agent) {
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (_) => _AgentRunPage(agent: agent, config: config),
+      builder: (_) => AgentRunPage(agent: agent, config: config),
     ),
   );
 }
 
-class _AgentRunPage extends ConsumerStatefulWidget {
+class AgentRunPage extends ConsumerStatefulWidget {
   final TomatoAgent agent;
   final dynamic config;
 
-  const _AgentRunPage({required this.agent, required this.config});
+  const AgentRunPage({required this.agent, required this.config});
 
   @override
-  ConsumerState<_AgentRunPage> createState() => _AgentRunPageState();
+  ConsumerState<AgentRunPage> createState() => _AgentRunPageState();
 }
 
-class _AgentRunPageState extends ConsumerState<_AgentRunPage> {
+class _AgentRunPageState extends ConsumerState<AgentRunPage> {
   final List<TextEditingController> _paramCtrls = [];
   final TextEditingController _inputCtrl = TextEditingController();
   final List<Map<String, dynamic>> _messages = [];
