@@ -102,4 +102,4 @@
 -dontwarn android.**
 -dontwarn javax.annotation.**
 -dontwarn sun.misc.Unsafe
--dontwarn org.codehaus.mojo.animal_snigner.**
+-dontwarn org.codehaus.mojo.animal_sniffer.**
