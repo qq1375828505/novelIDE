@@ -1113,7 +1113,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           textTertiary,
           cardBg2,
           primaryColor,
-          selectedNovel!,
+          null,
         ),
         _buildMaterialNode('设定', 0, Icons.settings, textPrimary, textTertiary, cardBg2, materialType: 'setting'),
         _buildMaterialNode('地点', 0, Icons.location_on, textPrimary, textTertiary, cardBg2, materialType: 'location'),
@@ -1162,7 +1162,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     Color textTertiary,
     Color cardBg2,
     Color primaryColor,
-    Novel selectedNovel,
+    Novel? selectedNovel,
   ) {
     return Container(
       width: double.infinity,
@@ -1201,6 +1201,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           GestureDetector(
             onTap: () {
               setState(() => _sidebarOpen = false);
+              if (selectedNovel == null) {
+                TopNotification.show(context, '请先选择一部作品');
+                return;
+              }
               Navigator.push(
                 context,
                 MaterialPageRoute(
