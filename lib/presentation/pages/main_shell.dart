@@ -1111,7 +1111,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           textTertiary,
           cardBg2,
           primaryColor,
-          selectedNovel,
+          selectedNovel!,
         ),
         _buildMaterialNode('设定', 0, Icons.settings, textPrimary, textTertiary, cardBg2, materialType: 'setting'),
         _buildMaterialNode('地点', 0, Icons.location_on, textPrimary, textTertiary, cardBg2, materialType: 'location'),
@@ -1279,6 +1279,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               MaterialPageRoute(
                 builder: (_) => WaterReportPage(
                   chapterContent: chapter.content,
+                  aiResponse: "分析中...",
                 ),
               ),
             );
@@ -1472,6 +1473,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                             MaterialPageRoute(
                               builder: (_) => WaterReportPage(
                                 chapterContent: chapter.content,
+                                aiResponse: "分析中...",
                               ),
                             ),
                           );
