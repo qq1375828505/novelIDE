@@ -404,9 +404,11 @@ class _MainShellState extends ConsumerState<MainShell> {
       ),
       child: Column(
         children: [
+          // 顶部安全区域留白
+          SizedBox(height: MediaQuery.of(context).padding.top + 8),
           // 新会话按钮
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: GestureDetector(
               onTap: _triggerNewSession,
               child: Container(
