@@ -68,6 +68,38 @@
 # 网络连接
 -keep class com.github.florent37.assets_audio_player.** { *; }
 
+# Hive（补充）
+-keep class io.flutter.plugins.hive.** { *; }
+-keep class * extends HiveObject { *; }
+
+# flutter_secure_storage
+-keep class com.it_nomads.fluttersecurestorage.** { *; }
+
+# sqflite
+-keep class com.tekartik.sqflite.** { *; }
+
+# shared_preferences
+-keep class io.flutter.plugins.sharedpreferences.** { *; }
+
+# url_launcher
+-keep class io.flutter.plugins.urllauncher.** { *; }
+
+# speech_to_text
+-keep class com.csdcorp.speech_to_text.** { *; }
+
+# local_notifications
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+
+# WebView
+-keep class android.webkit.** { *; }
+-keep class io.flutter.plugins.webviewflutter.** { *; }
+
+# Dio 网络库
+-keep class io.flutter.plugins.connectivity.** { *; }
+
 # 避免警告
 -dontwarn io.flutter.embedding.**
 -dontwarn android.**
+-dontwarn javax.annotation.**
+-dontwarn sun.misc.Unsafe
+-dontwarn org.codehaus.mojo.animal_snigner.**
