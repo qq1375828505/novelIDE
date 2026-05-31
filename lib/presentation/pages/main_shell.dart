@@ -23,7 +23,6 @@ import 'package:novel_ide/presentation/pages/outline/outline_page.dart';
 import 'package:novel_ide/presentation/widgets/top_notification.dart';
 import 'package:novel_ide/core/router.dart';
 import 'package:novel_ide/core/theme/skin_provider.dart';
-import 'package:novel_ide/core/theme/app_themes.dart';
 
 /// GPT风格单页面聊天应用
 class MainShell extends ConsumerStatefulWidget {
@@ -77,6 +76,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   /// 触发新建会话
   void _triggerNewSession() {
+    // 通过增加触发器值来通知 AiChatPage 新建会话
     final currentTrigger = ref.read(newSessionTriggerProvider);
     ref.read(newSessionTriggerProvider.notifier).state = currentTrigger + 1;
     setState(() => _sidebarOpen = false);
@@ -110,6 +110,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       
       if (!mounted) return;
       
+      // 显示导入预览对话框
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -139,6 +140,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       
       if (confirm != true || !mounted) return;
       
+      // 执行导入
       final importResult = await importService.importFromFile(
         novelId: selectedNovel?.id,
         novelTitle: selectedNovel?.title,
@@ -149,6 +151,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       
       if (importResult.success) {
         TopNotification.success(context, '导入成功：${importResult.chapterCount} 章');
+        // 刷新作品列表
         ref.invalidate(novelsProvider);
       } else {
         TopNotification.error(context, '导入失败：${importResult.error}');
@@ -167,7 +170,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     final selectedNovel = ref.watch(selectedNovelProvider);
     final aiConfigs = ref.watch(aiConfigsProvider);
     final selectedAiConfig = ref.watch(selectedAiConfigProvider);
-    final skinTheme = ref.watch(skinThemeProvider);
     
     // 更新显示的模型名称
     if (selectedAiConfig != null) {
@@ -179,7 +181,8 @@ class _MainShellState extends ConsumerState<MainShell> {
       }
     }
     
-    // 从皮肤主题读取颜色
+    // 主题颜色 - 从皮肤主题读取
+    final skinTheme = ref.watch(skinThemeProvider);
     final bgColor = skinTheme.background;
     final sidebarBg = skinTheme.navBg;
     final cardBg = skinTheme.surface;
@@ -200,7 +203,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               // 顶部栏
               _buildTopBar(
                 context: context,
-                bgColor: skinTheme.appBarBg,
+                bgColor: bgColor,
                 textPrimary: textPrimary,
                 textSecondary: textSecondary,
                 primaryColor: primaryColor,
@@ -281,7 +284,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: bgColor,
-        border: Border(bottom: BorderSide(color: textSecondary.withOpacity(0.2))),
+        border: const Border(bottom: BorderSide(color: Color(0xFF2A2A2A))),
       ),
       child: SafeArea(
         bottom: false,
@@ -311,7 +314,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                       decoration: BoxDecoration(
-                        color: textSecondary.withOpacity(0.2),
+                        color: const Color(0xFF2F2F2F),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -351,7 +354,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 }
               },
             ),
-            // AI工具按钮
+            // AI工具按钮 - 跳转到AI聊天页面
             IconButton(
               icon: Icon(Icons.psychology, color: primaryColor, size: 22),
               onPressed: () {
@@ -407,7 +410,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: textSecondary.withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFF333333)),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -431,7 +434,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 历史会话
+                  // 历史会话（从真实数据源读取）
                   _buildSectionLabel('历史会话', textSecondary),
                   if (_chatSessions.isEmpty && _sessionsLoaded)
                     Padding(
@@ -463,7 +466,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   const SizedBox(height: 8),
                   _buildSectionLabel('资料库', textSecondary),
                   
-                  // 资料库分类
+                  // 资料库分类 - 读取真实数量
                   ..._buildMaterialNodesWithCounts(
                     selectedNovel,
                     textPrimary,
@@ -471,18 +474,6 @@ class _MainShellState extends ConsumerState<MainShell> {
                     cardBg2,
                     primaryColor,
                   ),
-                  
-                  const SizedBox(height: 8),
-                  _buildSectionLabel('AI工具', textSecondary),
-                  
-                  // AI工具分类
-                  _buildAiToolItem('写作统计', Icons.bar_chart, textPrimary, textTertiary, cardBg2, primaryColor),
-                  _buildAiToolItem('爽点报告', Icons.analytics, textPrimary, textTertiary, cardBg2, primaryColor),
-                  _buildAiToolItem('水文检测', Icons.water_drop, textPrimary, textTertiary, cardBg2, primaryColor),
-                  _buildAiToolItem('标题生成', Icons.title, textPrimary, textTertiary, cardBg2, primaryColor),
-                  _buildAiToolItem('全文审查', Icons.fact_check, textPrimary, textTertiary, cardBg2, primaryColor),
-                  _buildAiToolItem('润色引擎', Icons.auto_fix_high, textPrimary, textTertiary, cardBg2, primaryColor),
-                  _buildAiToolItem('Agent市场', Icons.store, textPrimary, textTertiary, cardBg2, primaryColor),
                 ],
               ),
             ),
@@ -500,6 +491,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       setState(() => _sidebarOpen = false);
+                      // 跳转到导出页面
                       final novel = ref.read(selectedNovelProvider);
                       if (novel != null) {
                         Navigator.push(
@@ -516,7 +508,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                     label: const Text('导出'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: textPrimary,
-                      side: BorderSide(color: textSecondary.withOpacity(0.3)),
+                      side: const BorderSide(color: Color(0xFF333333)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
@@ -529,7 +521,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                     label: const Text('导入'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: textPrimary,
-                      side: BorderSide(color: textSecondary.withOpacity(0.3)),
+                      side: const BorderSide(color: Color(0xFF333333)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
@@ -556,6 +548,39 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
+  Widget _buildHistoryItem(String title, String time, Color textPrimary, Color textTertiary, Color cardBg2) {
+    return GestureDetector(
+      onTap: () {
+        setState(() => _sidebarOpen = false);
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        margin: const EdgeInsets.only(bottom: 2),
+        decoration: BoxDecoration(
+          color: cardBg2,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(color: textPrimary, fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              time,
+              style: TextStyle(color: textTertiary, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// 从会话模型构建历史会话项
   Widget _buildHistoryItemFromModel(
     AiChatSessionModel session,
@@ -566,6 +591,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final currentSessionId = ref.watch(currentSessionIdProvider);
     final isSelected = currentSessionId == session.id;
     
+    // 格式化时间
     String timeStr;
     final now = DateTime.now();
     final updatedAt = session.updatedAt;
@@ -584,7 +610,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         margin: const EdgeInsets.only(bottom: 2),
         decoration: BoxDecoration(
-          color: isSelected ? cardBg2.withOpacity(1.2) : cardBg2,
+          color: isSelected ? const Color(0xFF2A3A2A) : cardBg2,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -655,7 +681,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: textSecondary.withOpacity(0.2),
+                    color: const Color(0xFF2F2F2F),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -664,6 +690,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   ),
                 ),
                 const SizedBox(width: 4),
+                // 大纲按钮
                 GestureDetector(
                   onTap: () {
                     ref.read(selectedNovelProvider.notifier).state = novel;
@@ -700,16 +727,13 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   /// 显示作品长按菜单
   void _showNovelContextMenu(Novel novel) {
-    final skinTheme = ref.read(skinThemeProvider);
-    final textPrimary = skinTheme.textPrimary;
-    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: skinTheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: SafeArea(
           child: Column(
@@ -718,23 +742,23 @@ class _MainShellState extends ConsumerState<MainShell> {
               Container(
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(top: 12),
-                decoration: BoxDecoration(color: skinTheme.textSecondary.withOpacity(0.3), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: const Color(0xFF444444), borderRadius: BorderRadius.circular(2)),
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(novel.title, style: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(novel.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               ListTile(
-                leading: Icon(Icons.add, color: textPrimary),
-                title: Text('新建卷', style: TextStyle(color: textPrimary)),
+                leading: const Icon(Icons.add, color: Colors.white),
+                title: const Text('新建卷', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showNewVolumeDialog(novel);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.edit, color: textPrimary),
-                title: Text('重命名作品', style: TextStyle(color: textPrimary)),
+                leading: const Icon(Icons.edit, color: Colors.white),
+                title: const Text('重命名作品', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showRenameNovelDialog(novel);
@@ -759,24 +783,21 @@ class _MainShellState extends ConsumerState<MainShell> {
   /// 新建卷对话框
   void _showNewVolumeDialog(Novel novel) {
     final ctrl = TextEditingController();
-    final skinTheme = ref.read(skinThemeProvider);
-    final textPrimary = skinTheme.textPrimary;
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: skinTheme.surface,
-        title: Text('新建卷', style: TextStyle(color: textPrimary)),
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('新建卷', style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: ctrl,
-          style: TextStyle(color: textPrimary),
-          decoration: InputDecoration(
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
             hintText: '卷名称',
-            hintStyle: TextStyle(color: skinTheme.textSecondary),
+            hintStyle: TextStyle(color: Colors.grey),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('取消', style: TextStyle(color: skinTheme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
             onPressed: () async {
               if (ctrl.text.trim().isEmpty) return;
@@ -787,6 +808,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 orderIndex: (_loadedVolumes[novel.id]?.length ?? 0),
               );
               Navigator.pop(ctx);
+              // 刷新卷列表
               final volumes = await volumeRepo.getVolumesByNovel(novel.id);
               setState(() {
                 _loadedVolumes[novel.id] = volumes;
@@ -803,30 +825,28 @@ class _MainShellState extends ConsumerState<MainShell> {
   /// 重命名作品对话框
   void _showRenameNovelDialog(Novel novel) {
     final ctrl = TextEditingController(text: novel.title);
-    final skinTheme = ref.read(skinThemeProvider);
-    final textPrimary = skinTheme.textPrimary;
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: skinTheme.surface,
-        title: Text('重命名作品', style: TextStyle(color: textPrimary)),
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('重命名作品', style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: ctrl,
-          style: TextStyle(color: textPrimary),
-          decoration: InputDecoration(
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
             hintText: '作品名称',
-            hintStyle: TextStyle(color: skinTheme.textSecondary),
+            hintStyle: TextStyle(color: Colors.grey),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('取消', style: TextStyle(color: skinTheme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
             onPressed: () async {
               if (ctrl.text.trim().isEmpty) return;
               final novelRepo = ref.read(novelRepoProvider);
               await novelRepo.updateNovel(novel.copyWith(title: ctrl.text.trim()));
               Navigator.pop(ctx);
+              // 刷新作品列表
               ref.invalidate(novelsProvider);
               TopNotification.success(context, '已重命名');
             },
@@ -839,26 +859,25 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   /// 删除作品确认
   void _showDeleteNovelConfirm(Novel novel) {
-    final skinTheme = ref.read(skinThemeProvider);
-    final textPrimary = skinTheme.textPrimary;
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: skinTheme.surface,
-        title: Text('删除作品', style: TextStyle(color: textPrimary)),
-        content: Text('确定要删除「${novel.title}」吗？此操作不可恢复。', style: TextStyle(color: skinTheme.textSecondary)),
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('删除作品', style: TextStyle(color: Colors.white)),
+        content: Text('确定要删除「${novel.title}」吗？此操作不可恢复。', style: const TextStyle(color: Colors.grey)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('取消', style: TextStyle(color: skinTheme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               final novelRepo = ref.read(novelRepoProvider);
               await novelRepo.deleteNovel(novel.id, novel.title);
               Navigator.pop(ctx);
+              // 清除选中状态
               if (ref.read(selectedNovelProvider)?.id == novel.id) {
                 ref.read(selectedNovelProvider.notifier).state = null;
               }
+              // 刷新作品列表
               ref.invalidate(novelsProvider);
               TopNotification.success(context, '已删除');
             },
@@ -867,32 +886,6 @@ class _MainShellState extends ConsumerState<MainShell> {
         ],
       ),
     );
-  }
-
-  /// 展开/折叠作品节点
-  void _toggleNovelExpand(String novelId) {
-    setState(() {
-      if (_expandedNovels.contains(novelId)) {
-        _expandedNovels.remove(novelId);
-      } else {
-        _expandedNovels.add(novelId);
-        _loadVolumesForNovel(novelId);
-      }
-    });
-  }
-
-  /// 加载作品的卷数据
-  Future<void> _loadVolumesForNovel(String novelId) async {
-    if (_loadedVolumes[novelId] != null) return;
-    try {
-      final volumeRepo = ref.read(volumeRepoProvider);
-      final volumes = await volumeRepo.getVolumesByNovel(novelId);
-      setState(() {
-        _loadedVolumes[novelId] = volumes;
-      });
-    } catch (e) {
-      debugPrint('Load volumes error: $e');
-    }
   }
 
   Widget _buildVolumeNode({
@@ -910,11 +903,10 @@ class _MainShellState extends ConsumerState<MainShell> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () => _toggleVolumeExpand(volume.id, novel.id),
+          onTap: () => _toggleVolumeExpand(volume.id),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            margin: const EdgeInsets.only(bottom: 1),
             child: Row(
               children: [
                 Icon(
@@ -923,19 +915,15 @@ class _MainShellState extends ConsumerState<MainShell> {
                   size: 14,
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.folder, color: textSecondary, size: 14),
+                const Icon(Icons.folder, color: Color(0xFFFFC107), size: 14),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     volume.title,
-                    style: TextStyle(color: textSecondary, fontSize: 12),
+                    style: TextStyle(color: textPrimary, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  '${volume.chapterCount}章',
-                  style: TextStyle(color: textTertiary, fontSize: 10),
                 ),
               ],
             ),
@@ -943,15 +931,15 @@ class _MainShellState extends ConsumerState<MainShell> {
         ),
         if (isExpanded && chapters != null)
           Padding(
-            padding: const EdgeInsets.only(left: 16),
+            padding: const EdgeInsets.only(left: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: chapters.map((chapter) => _buildChapterNode(
-                chapter: chapter,
+              children: chapters.map((ch) => _buildChapterLeaf(
+                chapter: ch,
                 novel: novel,
                 textPrimary: textPrimary,
-                textSecondary: textSecondary,
                 textTertiary: textTertiary,
+                cardBg2: cardBg2,
               )).toList(),
             ),
           ),
@@ -959,145 +947,85 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  /// 展开/折叠卷节点
-  void _toggleVolumeExpand(String volumeId, String novelId) {
-    setState(() {
-      if (_expandedVolumes.contains(volumeId)) {
-        _expandedVolumes.remove(volumeId);
-      } else {
-        _expandedVolumes.add(volumeId);
-        _loadChaptersForVolume(volumeId, novelId);
-      }
-    });
-  }
-
-  /// 加载卷的章节数据
-  Future<void> _loadChaptersForVolume(String volumeId, String novelId) async {
-    if (_loadedChapters[volumeId] != null) return;
-    try {
-      final chapterRepo = ref.read(chapterRepoProvider);
-      final chapters = await chapterRepo.getChaptersByVolume(volumeId);
-      setState(() {
-        _loadedChapters[volumeId] = chapters;
-      });
-    } catch (e) {
-      debugPrint('Load chapters error: $e');
-    }
-  }
-
-  Widget _buildChapterNode({
+  Widget _buildChapterLeaf({
     required Chapter chapter,
     required Novel novel,
     required Color textPrimary,
-    required Color textSecondary,
     required Color textTertiary,
+    required Color cardBg2,
   }) {
+    final status = ChapterStatus.values.firstWhere(
+      (e) => e.name == chapter.status,
+      orElse: () => ChapterStatus.draft,
+    );
+    
+    Color badgeColor;
+    String badgeText;
+    switch (status) {
+      case ChapterStatus.unwritten:
+        badgeColor = const Color(0xFF6C757D);
+        badgeText = '未写';
+        break;
+      case ChapterStatus.draft:
+        badgeColor = const Color(0xFFFFC107);
+        badgeText = '草稿';
+        break;
+      case ChapterStatus.polishing:
+        badgeColor = const Color(0xFF17A2B8);
+        badgeText = '润色中';
+        break;
+      case ChapterStatus.completed:
+        badgeColor = const Color(0xFF28A745);
+        badgeText = '已完成';
+        break;
+      case ChapterStatus.exported:
+        badgeColor = const Color(0xFF007BFF);
+        badgeText = '已导出';
+        break;
+    }
+    
     return GestureDetector(
       onTap: () {
         ref.read(selectedNovelProvider.notifier).state = novel;
         ref.read(selectedChapterProvider.notifier).state = chapter;
-        setState(() => _sidebarOpen = false);
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const EditorPage()),
+          MaterialPageRoute(
+            builder: (_) => EditorPage(novelId: novel.id, chapterId: chapter.id),
+          ),
         );
+        setState(() => _sidebarOpen = false);
       },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        margin: const EdgeInsets.only(bottom: 1),
         child: Row(
           children: [
-            const SizedBox(width: 18),
-            Icon(Icons.description, color: textSecondary, size: 14),
+            const Icon(Icons.description, color: Color(0xFF999999), size: 14),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 chapter.title,
-                style: TextStyle(color: textSecondary, fontSize: 12),
+                style: TextStyle(color: textPrimary, fontSize: 12),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Text(
-              '${chapter.wordCount}字',
-              style: TextStyle(color: textTertiary, fontSize: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: badgeColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                badgeText,
+                style: TextStyle(color: badgeColor, fontSize: 10),
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  /// 构建资料库节点列表
-  List<Widget> _buildMaterialNodesWithCounts(
-    Novel? selectedNovel,
-    Color textPrimary,
-    Color textTertiary,
-    Color cardBg2,
-    Color primaryColor,
-  ) {
-    // 关系图按钮 - 始终显示
-    final List<Widget> nodes = [
-      _buildMaterialNode('角色', selectedNovel?.characterCount ?? 0, Icons.person, textPrimary, textTertiary, cardBg2, materialType: 'character'),
-      _buildMaterialNode('设定', selectedNovel?.settingCount ?? 0, Icons.settings, textPrimary, textTertiary, cardBg2, materialType: 'setting'),
-      _buildMaterialNode('地点', selectedNovel?.locationCount ?? 0, Icons.location_on, textPrimary, textTertiary, cardBg2, materialType: 'location'),
-      _buildMaterialNode('势力', selectedNovel?.factionCount ?? 0, Icons.account_balance, textPrimary, textTertiary, cardBg2, materialType: 'faction'),
-      _buildMaterialNode('道具', selectedNovel?.itemCount ?? 0, Icons.inventory_2, textPrimary, textTertiary, cardBg2, materialType: 'item'),
-      _buildMaterialNode('伏笔', selectedNovel?.hookCount ?? 0, Icons.lightbulb_outline, textPrimary, textTertiary, cardBg2, materialType: 'hook'),
-      _buildMaterialNode('参考', selectedNovel?.referenceCount ?? 0, Icons.book, textPrimary, textTertiary, cardBg2, materialType: 'reference'),
-      _buildMaterialNode('记忆包', selectedNovel?.memoryCount ?? 0, Icons.psychology, textPrimary, textTertiary, cardBg2),
-      // 关系图按钮 - 始终显示
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        margin: const EdgeInsets.only(bottom: 2),
-        child: Row(
-          children: [
-            const SizedBox(width: 20),
-            Expanded(
-              child: Text(
-                '人物关系图',
-                style: TextStyle(color: textPrimary, fontSize: 13),
-              ),
-            ),
-            GestureDetector(
-              onTap: selectedNovel != null ? () {
-                setState(() => _sidebarOpen = false);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RelationshipGraphPage(
-                      novelId: selectedNovel.id,
-                      novelTitle: selectedNovel.title,
-                    ),
-                  ),
-                );
-              } : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(selectedNovel != null ? 0.15 : 0.05),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: primaryColor.withOpacity(selectedNovel != null ? 0.3 : 0.1)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.people_outline, color: primaryColor.withOpacity(selectedNovel != null ? 1.0 : 0.4), size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      '查看',
-                      style: TextStyle(color: primaryColor.withOpacity(selectedNovel != null ? 1.0 : 0.4), fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ];
-    return nodes;
   }
 
   Widget _buildMaterialNode(
@@ -1112,11 +1040,13 @@ class _MainShellState extends ConsumerState<MainShell> {
     return GestureDetector(
       onTap: () {
         setState(() => _sidebarOpen = false);
+        // 设置初始分类，供 MaterialsTreePage 读取
         if (materialType != null) {
           ref.read(initialMaterialTabProvider.notifier).state = materialType;
         } else {
           ref.read(initialMaterialTabProvider.notifier).state = null;
         }
+        // 跳转到资料库页面
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1146,41 +1076,132 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  /// 构建AI工具项
-  Widget _buildAiToolItem(
-    String label,
-    IconData icon,
+  /// 构建资料库节点列表，包含真实数量和关系图按钮
+  List<Widget> _buildMaterialNodesWithCounts(
+    Novel? selectedNovel,
     Color textPrimary,
     Color textTertiary,
     Color cardBg2,
     Color primaryColor,
   ) {
-    return GestureDetector(
-      onTap: () {
-        setState(() => _sidebarOpen = false);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AiChatPage()),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        margin: const EdgeInsets.only(bottom: 2),
-        child: Row(
-          children: [
-            const SizedBox(width: 20),
-            Icon(icon, color: primaryColor, size: 16),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(color: textPrimary, fontSize: 13),
+    // 如果没有选中作品，显示默认数量为0
+    if (selectedNovel == null) {
+      return [
+        _buildMaterialNode('角色', 0, Icons.person, textPrimary, textTertiary, cardBg2, materialType: 'character'),
+        _buildMaterialNode('设定', 0, Icons.settings, textPrimary, textTertiary, cardBg2, materialType: 'setting'),
+        _buildMaterialNode('伏笔', 0, Icons.lightbulb_outline, textPrimary, textTertiary, cardBg2, materialType: 'hook'),
+        _buildMaterialNode('势力', 0, Icons.account_balance, textPrimary, textTertiary, cardBg2, materialType: 'faction'),
+        _buildMaterialNode('道具', 0, Icons.inventory_2, textPrimary, textTertiary, cardBg2, materialType: 'item'),
+        _buildMaterialNode('参考', 0, Icons.book, textPrimary, textTertiary, cardBg2, materialType: 'reference'),
+        _buildMaterialNode('记忆包', 0, Icons.psychology, textPrimary, textTertiary, cardBg2),
+      ];
+    }
+
+    // 读取真实数量
+    final novelId = selectedNovel.id;
+    final characters = ref.watch(charactersProvider(novelId));
+    final settings = ref.watch(settingCardsProvider(novelId));
+    final hooks = ref.watch(plotHooksProvider(novelId));
+    final factions = ref.watch(factionsProvider(novelId));
+    final items = ref.watch(itemsProvider(novelId));
+    final references = ref.watch(referencesProvider(novelId));
+
+    return [
+      // 角色节点 + 关系图按钮
+      _buildCharacterNodeWithGraphButton(
+        characters.length,
+        textPrimary,
+        textTertiary,
+        cardBg2,
+        primaryColor,
+        selectedNovel,
+      ),
+      _buildMaterialNode('设定', settings.length, Icons.settings, textPrimary, textTertiary, cardBg2, materialType: 'setting'),
+      _buildMaterialNode('伏笔', hooks.length, Icons.lightbulb_outline, textPrimary, textTertiary, cardBg2, materialType: 'hook'),
+      _buildMaterialNode('势力', factions.length, Icons.account_balance, textPrimary, textTertiary, cardBg2, materialType: 'faction'),
+      _buildMaterialNode('道具', items.length, Icons.inventory_2, textPrimary, textTertiary, cardBg2, materialType: 'item'),
+      _buildMaterialNode('参考', references.length, Icons.book, textPrimary, textTertiary, cardBg2, materialType: 'reference'),
+      _buildMaterialNode('记忆包', 0, Icons.psychology, textPrimary, textTertiary, cardBg2),
+    ];
+  }
+
+  /// 构建角色节点，包含关系图按钮
+  Widget _buildCharacterNodeWithGraphButton(
+    int count,
+    Color textPrimary,
+    Color textTertiary,
+    Color cardBg2,
+    Color primaryColor,
+    Novel selectedNovel,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      margin: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        children: [
+          // 角色节点
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _sidebarOpen = false);
+                ref.read(initialMaterialTabProvider.notifier).state = 'character';
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MaterialsTreePage(),
+                  ),
+                );
+              },
+              child: Row(
+                children: [
+                  Icon(Icons.keyboard_arrow_right, color: textTertiary, size: 16),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.person, color: Color(0xFFFFFFFF), size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    '角色 ($count)',
+                    style: TextStyle(color: textPrimary, fontSize: 13),
+                  ),
+                ],
               ),
             ),
-            Icon(Icons.chevron_right, color: textTertiary, size: 16),
-          ],
-        ),
+          ),
+          // 关系图按钮
+          GestureDetector(
+            onTap: () {
+              setState(() => _sidebarOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RelationshipGraphPage(
+                    novelId: selectedNovel.id,
+                    novelTitle: selectedNovel.title,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: primaryColor.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.people_outline, color: primaryColor, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    '关系图',
+                    style: TextStyle(color: primaryColor, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1196,71 +1217,151 @@ class _MainShellState extends ConsumerState<MainShell> {
     required Color dividerColor,
   }) {
     final aiConfigs = ref.watch(aiConfigsProvider);
-    final selectedAiConfig = ref.watch(selectedAiConfigProvider);
+    final selectedConfig = ref.watch(selectedAiConfigProvider);
+    final textConfigs = aiConfigs.where((c) => c.modelType == ModelType.text).toList();
+    
+    // 如果没有配置，显示提示
+    if (textConfigs.isEmpty) {
+      return Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: cardBg,
+          border: Border.all(color: const Color(0xFF333333)),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(color: Colors.black45, blurRadius: 32),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('暂无AI模型配置', style: TextStyle(color: textSecondary, fontSize: 14)),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () {
+                setState(() => _modelDropdownOpen = false);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+              },
+              child: const Text('去配置'),
+            ),
+          ],
+        ),
+      );
+    }
     
     return Container(
-      width: 300,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      width: 280,
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: dividerColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+        border: Border.all(color: const Color(0xFF333333)),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(color: Colors.black45, blurRadius: 32),
         ],
       ),
+      padding: const EdgeInsets.all(6),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(
-              '选择模型',
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+          ...textConfigs.map((config) => GestureDetector(
+            onTap: () {
+              // 更新选中的AI配置
+              ref.read(selectedAiConfigProvider.notifier).state = config;
+              setState(() {
+                _selectedModelDisplay = config.name;
+                _modelDropdownOpen = false;
+              });
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: selectedConfig?.id == config.id ? cardBg2 : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    config.name,
+                    style: TextStyle(color: textPrimary, fontSize: 14),
+                  ),
+                  if (config.modelName.contains('GLM') || config.modelName.contains('glm')) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A3A2A),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '内置',
+                        style: TextStyle(color: primaryColor, fontSize: 10),
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  if (selectedConfig?.id == config.id)
+                    Icon(Icons.check, color: primaryColor, size: 18),
+                ],
               ),
             ),
-          ),
-          Divider(height: 1, color: dividerColor),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: aiConfigs.length,
-              itemBuilder: (context, index) {
-                final config = aiConfigs[index];
-                final isSelected = selectedAiConfig?.id == config.id;
-                
-                return ListTile(
-                  title: Text(
-                    config.name,
-                    style: TextStyle(
-                      color: isSelected ? primaryColor : textPrimary,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: Text(
-                    config.modelType == ModelType.text ? '文本模型' : '图像模型',
-                    style: TextStyle(color: textSecondary, fontSize: 12),
-                  ),
-                  trailing: isSelected
-                      ? Icon(Icons.check, color: primaryColor, size: 20)
-                      : null,
-                  onTap: () {
-                    ref.read(selectedAiConfigProvider.notifier).state = config;
-                    setState(() => _modelDropdownOpen = false);
-                  },
-                );
-              },
+          )),
+          Container(height: 1, color: dividerColor, margin: const EdgeInsets.symmetric(vertical: 4)),
+          GestureDetector(
+            onTap: () {
+              setState(() => _modelDropdownOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Text(
+                '管理模型',
+                style: TextStyle(color: primaryColor, fontSize: 13),
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _toggleNovelExpand(String novelId) async {
+    if (_expandedNovels.contains(novelId)) {
+      setState(() => _expandedNovels.remove(novelId));
+    } else {
+      setState(() => _expandedNovels.add(novelId));
+      if (!_loadedVolumes.containsKey(novelId)) {
+        final volumes = await ref.read(volumeRepoProvider).getVolumesByNovel(novelId);
+        if (mounted) {
+          setState(() {
+            _loadedVolumes[novelId] = volumes;
+          });
+        }
+      }
+    }
+  }
+
+  void _toggleVolumeExpand(String volumeId) async {
+    if (_expandedVolumes.contains(volumeId)) {
+      setState(() => _expandedVolumes.remove(volumeId));
+    } else {
+      setState(() => _expandedVolumes.add(volumeId));
+      if (!_loadedChapters.containsKey(volumeId)) {
+        final chapters = await ref.read(chapterRepoProvider).getChaptersByVolume(volumeId);
+        if (mounted) {
+          setState(() {
+            _loadedChapters[volumeId] = chapters;
+          });
+        }
+      }
+    }
   }
 }
