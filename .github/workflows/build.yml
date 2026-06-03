@@ -44,7 +44,7 @@ jobs:
         echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
 
     - name: Build APK
-      run: flutter build apk --release
+      run: flutter build apk --release --no-tree-shake-icons
 
     - name: Rename APK
       run: cp build/app/outputs/flutter-apk/app-release.apk novel-ide-android.apk
